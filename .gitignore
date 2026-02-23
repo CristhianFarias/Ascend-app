@@ -1,0 +1,21 @@
+# Dependencias (¡Esto es lo más importante de excluir!)
+node_modules/
+
+# Archivos de construcción y distribución
+dist/
+build/
+out/
+
+# Archivos de entorno local (claves secretas que no deben subirse)
+.env
+.env.local
+*.env
+
+# Logs y archivos temporales del sistema
+*.log
+.DS_Store
+Thumbs.db
+
+# Carpetas específicas de frameworks (común en React Native/Expo)
+.expo/
+web-build/
