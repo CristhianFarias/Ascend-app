@@ -117,54 +117,79 @@ export default function ProgresoScreen() {
   };
 
   // Heatmap ajustado: siempre empieza desde día 1 (mes) o enero (año)
-  const heatmapData = useMemo(() => {
-    if (range === "week") {
-      return baseHeatmap; // Últimos 7 días (como antes)
-    }
+const heatmapData = useMemo(() => {
+  const today = new Date();
 
-    const today = new Date();
+  if (range === "week") {
+    return baseHeatmap;
+  }
+
+  if (range === "month") {
     const result: typeof baseHeatmap = [];
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    if (range === "month") {
-      // Desde día 1 del mes actual hasta hoy
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      if (date > today) break;
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        if (date > today) break; // No incluir futuros
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-        const goalIds = dailyCompletionMap[key] ?? [];
-        result.push({
-          date: key,
-          completed: goalIds.length > 0,
-          count: goalIds.length,
-          goalIds,
-        });
-      }
-    } else if (range === "year") {
-      // Para año mostramos resumen por mes pero heatmap diaria del mes actual (por simplicidad)
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0",
+      )}-${String(date.getDate()).padStart(2, "0")}`;
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        if (date > today) break;
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-        const goalIds = dailyCompletionMap[key] ?? [];
-        result.push({
-          date: key,
-          completed: goalIds.length > 0,
-          count: goalIds.length,
-          goalIds,
-        });
-      }
+      const goalIds = dailyCompletionMap[key] ?? [];
+      result.push({
+        date: key,
+        completed: goalIds.length > 0,
+        count: goalIds.length,
+        goalIds,
+      });
     }
 
     return result;
-  }, [range, baseHeatmap, dailyCompletionMap]);
+  }
+
+  const result: typeof baseHeatmap = [];
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+
+  for (let month = 0; month <= currentMonth; month++) {
+    const monthStart = new Date(currentYear, month, 1);
+    const monthEnd = new Date(currentYear, month + 1, 0);
+
+    let count = 0;
+    const goalIdsSet = new Set<string>();
+
+    for (let day = 1; day <= monthEnd.getDate(); day++) {
+      const date = new Date(currentYear, month, day);
+      if (date > today) break;
+
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+        2,
+        "0",
+      )}-${String(date.getDate()).padStart(2, "0")}`;
+
+      const goalIds = dailyCompletionMap[key] ?? [];
+      count += goalIds.length;
+      goalIds.forEach((id) => goalIdsSet.add(id));
+    }
+
+    const key = `${monthStart.getFullYear()}-${String(
+      monthStart.getMonth() + 1,
+    ).padStart(2, "0")}-01`;
+
+    result.push({
+      date: key,
+      completed: count > 0,
+      count,
+      goalIds: Array.from(goalIdsSet),
+    });
+  }
+
+  return result;
+}, [range, baseHeatmap, dailyCompletionMap]);
 
   const heatmapGrid = useMemo(() => heatmapData, [heatmapData]);
 
@@ -204,46 +229,43 @@ export default function ProgresoScreen() {
           labels.push(`Sem ${i + 1}`);
         }
       });
-    } else if (range === "year") {
-      const months = Array.from({ length: 12 }, () => ({
-        count: [] as number[],
-        streak: [] as number[],
-      }));
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth();
+} else if (range === "year") {
+  const months = Array.from({ length: 12 }, () => ({
+    count: [] as number[],
+    streak: [] as number[],
+  }));
 
-      // Llenar todos los meses del año actual
-      for (let m = 0; m <= currentMonth; m++) {
-        const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr = `${currentYear}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-          const item = baseHeatmap.find((h) => h.date === dateStr);
-          if (item) {
-            months[m].count.push(item.count);
-            const streakItem = baseStreakHistory.find(
-              (s) => s.date === dateStr,
-            );
-            months[m].streak.push(streakItem?.streak || 0);
-          }
-        }
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+
+  for (let m = 0; m <= currentMonth; m++) {
+    const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${currentYear}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const item = baseHeatmap.find((h) => h.date === dateStr);
+      if (item) {
+        months[m].count.push(item.count);
+        const streakItem = baseStreakHistory.find((s) => s.date === dateStr);
+        months[m].streak.push(streakItem?.streak || 0);
       }
-
-      months.forEach((month, i) => {
-        if (month.count.length > 0) {
-          const totalCount = month.count.reduce((a, b) => a + b, 0);
-          counts.push(totalCount);
-          const maxStreak = month.streak.reduce((m, v) => Math.max(m, v), 0);
-          streaks.push(maxStreak);
-          const monthName = new Date(currentYear, i, 1).toLocaleString(
-            "es-ES",
-            { month: "short" },
-          );
-          labels.push(monthName);
-        }
-      });
     }
+  }
 
+  months.forEach((month, i) => {
+    if (month.count.length > 0) {
+      const totalCount = month.count.reduce((a, b) => a + b, 0);
+      counts.push(totalCount);
+      const maxStreak = month.streak.reduce((m, v) => Math.max(m, v), 0);
+      streaks.push(maxStreak);
+      const monthName = new Date(currentYear, i, 1).toLocaleString("es-ES", {
+        month: "short",
+      });
+      labels.push(monthName);
+    }
+  });
+}
     return {
       labels,
       datasets: [
@@ -297,30 +319,42 @@ export default function ProgresoScreen() {
   };
 
   // Calendario con completados + deadlines
-  const markedDates = useMemo(() => {
-    const marks: any = {};
+const markedDates = useMemo(() => {
+  const marks: any = {};
 
-    Object.keys(dailyCompletionMap).forEach((date) => {
-      marks[date] = marks[date] || {};
-      marks[date].customStyles = {
-        container: { backgroundColor: successColor },
-        text: { color: "#fff", fontWeight: "bold" },
-      };
-    });
+  Object.keys(dailyCompletionMap).forEach((date) => {
+    const goalIds = dailyCompletionMap[date] ?? [];
+    if (!goalIds.length) return;
 
-    goals.forEach((goal) => {
-      if (goal.deadline) {
-        marks[goal.deadline] = marks[goal.deadline] || { dots: [] };
-        marks[goal.deadline].dots.push({
+    marks[date] = {
+      ...(marks[date] || {}),
+      dots: [
+        ...(marks[date]?.dots || []),
+        {
+          key: "completed",
+          color: successColor,
+        },
+      ],
+    };
+  });
+
+  goals.forEach((goal) => {
+    if (!goal.deadline) return;
+
+    marks[goal.deadline] = {
+      ...(marks[goal.deadline] || {}),
+      dots: [
+        ...(marks[goal.deadline]?.dots || []),
+        {
           key: goal.id,
           color: goal.color || accentColor,
-        });
-        marks[goal.deadline].marked = true;
-      }
-    });
+        },
+      ],
+    };
+  });
 
-    return marks;
-  }, [dailyCompletionMap, goals, accentColor, successColor]);
+  return marks;
+}, [dailyCompletionMap, goals, accentColor, successColor]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -469,26 +503,31 @@ export default function ProgresoScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 12 }}
           >
-            {heatmapGrid.map((h) => (
-              <TouchableOpacity
-                key={h.date}
-                style={[
-                  styles.heatCell,
-                  {
-                    backgroundColor: h.completed
-                      ? successColor
-                      : dark
-                        ? "#1f2937"
-                        : "#e5e7eb",
-                  },
-                  styles.shadowSmall,
-                ]}
-              >
-                <Text style={styles.heatText}>
-                  {new Date(h.date).getDate()}
-                </Text>
-              </TouchableOpacity>
-            ))}
+{heatmapGrid.map((h) => {
+  const isYearRange = range === "year";
+  const label = isYearRange
+    ? new Date(h.date).toLocaleString("es-ES", { month: "short" })
+    : new Date(h.date).getDate().toString();
+
+  return (
+    <TouchableOpacity
+      key={h.date}
+      style={[
+        styles.heatCell,
+        {
+          backgroundColor: h.completed
+            ? successColor
+            : dark
+              ? "#1f2937"
+              : "#e5e7eb",
+        },
+        styles.shadowSmall,
+      ]}
+    >
+      <Text style={styles.heatText}>{label}</Text>
+    </TouchableOpacity>
+  );
+})}
           </ScrollView>
         </View>
 

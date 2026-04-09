@@ -1,33 +1,32 @@
 // app/_layout.tsx
-import { ThemeProvider } from "@react-navigation/native";
-import { StatusBar } from "expo-status-bar";
-import React from "react";
 import "react-native-reanimated";
 
-import { Stack } from "expo-router";
+import React from "react";
+import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useResolvedTheme } from "../hooks/use-resolved-theme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Slot } from "expo-router";
 
+/**
+ * Root layout mínimo y seguro para expo-router.
+ * Evita crear navegadores de nivel superior aquí para no romper el NavigationContext.
+ */
 export const unstable_settings = {
   anchor: "(tabs)",
 };
 
 export default function RootLayout(): React.ReactElement {
-  const { navTheme, resolvedMode } = useResolvedTheme();
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={navTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", title: "Modal" }}
-          />
-        </Stack>
-
-        <StatusBar style={resolvedMode === "dark" ? "light" : "dark"} />
-      </ThemeProvider>
+      <SafeAreaProvider>
+        {/* 
+          Slot renderiza children/layouts definidos en la carpeta app/.
+          Deja que los archivos en app/(tabs)/_layout.tsx u otros creen
+          sus propios Stacks/Tabs, evitando así problemas de contexto.
+        */}
+        <Slot />
+        <StatusBar style="auto" />
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

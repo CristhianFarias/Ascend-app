@@ -1,5 +1,6 @@
+// app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
-import { Mountain, Target, Trophy, User } from "lucide-react-native";
+import { Target, Trophy, Mountain, User } from "lucide-react-native";
 import React from "react";
 
 export default function TabLayout() {
@@ -14,7 +15,7 @@ export default function TabLayout() {
           paddingBottom: 10,
           paddingTop: 5,
         },
-        tabBarActiveTintColor: "#fbbf24", // Dorado
+        tabBarActiveTintColor: "#fbbf24",
         tabBarInactiveTintColor: "#94a3b8",
         tabBarLabelStyle: { fontSize: 10, fontWeight: "600" },
       }}
@@ -26,12 +27,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Target size={24} color={color} />,
         }}
       />
-
-      <Tabs.Screen
+        <Tabs.Screen
         name="metas"
         options={{
           title: "Metas",
-          tabBarIcon: ({ color }) => <Trophy size={24} color={color} />,
+          tabBarIcon: ({ color }) => <Target size={24} color={color} />,
         }}
       />
 
