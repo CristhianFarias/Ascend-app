@@ -1,25 +1,23 @@
 import { Check, CheckCircle2 } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
-import { useGoalsStore } from "../store/useGoalsStore";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getTodayKey } from "../store/ItineraryUtils";
+import useGoalsStore from "../store/useGoalsStore";
 
 type Props = {
   goalId: string;
 };
 
 export default function CompleteTodayButton({ goalId }: Props) {
-  // Conectamos con el Store
   const areAllStepsCompleted = useGoalsStore((s) => s.areAllStepsCompleted);
   const markGoalCompletedToday = useGoalsStore((s) => s.markGoalCompletedToday);
-  const isTodayMarked = useGoalsStore((s) => s.getCompletedGoalsForDate);
-  const getTodayKey = () => new Date().toISOString().split("T")[0];
 
   const canComplete = areAllStepsCompleted(goalId);
+  const todayKey = getTodayKey();
 
   // Verificamos si YA está marcada hoy (para cambiar el estilo visual)
   const completedToday = useGoalsStore((s) => {
-    const today = new Date().toISOString().split("T")[0]; // Simple YYYY-MM-DD local approx
-    const done = s.dailyCompletionMap[today] || [];
+    const done = s.dailyCompletionMap?.[todayKey] || [];
     return done.includes(goalId);
   });
 
@@ -51,8 +49,6 @@ export default function CompleteTodayButton({ goalId }: Props) {
     </TouchableOpacity>
   );
 }
-// Helper View para el estado completado (necesita import View arriba si usas el bloque if)
-import { View } from "react-native";
 
 const styles = StyleSheet.create({
   btn: {

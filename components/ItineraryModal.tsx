@@ -12,7 +12,8 @@ import {
   UIManager,
   View,
 } from "react-native";
-import { useGoalsStore } from "../store/useGoalsStore";
+import { getTodayKey } from "../store/ItineraryUtils";
+import useGoalsStore, { ScheduleBlock } from "../store/useGoalsStore";
 
 // Habilitar animaciones en Android
 if (
@@ -29,14 +30,15 @@ interface Props {
 export default function ItineraryModal({ onClose }: Props) {
   const {
     settings,
-    updateGoal,
-    externalEvents,
     generateScheduleProposal,
-    setDailySchedule,
+    setDailyScheduleForDate,
+    externalEvents,
+    updateSettings,
   } = useGoalsStore();
 
   const [expanded, setExpanded] = useState<string | null>("itinerary");
-  const [tempSchedule, setTempSchedule] = useState<any[]>([]);
+  const [tempSchedule, setTempSchedule] = useState<ScheduleBlock[]>([]);
+  const todayKey = getTodayKey();
 
   const toggleSection = (section: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -44,9 +46,7 @@ export default function ItineraryModal({ onClose }: Props) {
   };
 
   const handleAutoOrganize = () => {
-    const { proposal, warnings } = generateScheduleProposal(
-      new Date().toISOString(),
-    );
+    const { proposal, warnings } = generateScheduleProposal(todayKey);
     setTempSchedule(proposal);
     if (warnings.length > 0) {
       Alert.alert("Aviso de Conflictos", warnings.join("\n"));
@@ -55,7 +55,7 @@ export default function ItineraryModal({ onClose }: Props) {
 
   const saveAndClose = () => {
     if (tempSchedule.length > 0) {
-      setDailySchedule(tempSchedule);
+      setDailyScheduleForDate(todayKey, tempSchedule);
     }
     onClose();
   };
@@ -103,6 +103,7 @@ export default function ItineraryModal({ onClose }: Props) {
                 <TextInput
                   style={styles.timeInput}
                   value={settings.dayEndTime}
+                  onChangeText={(v) => updateSettings({ dayEndTime: v })}
                   placeholder="22:00"
                 />
               </View>
@@ -164,8 +165,8 @@ export default function ItineraryModal({ onClose }: Props) {
         {expanded === "itinerary" && (
           <View style={styles.itineraryList}>
             {tempSchedule.length > 0 ? (
-              tempSchedule.map((item, idx) => (
-                <View key={idx} style={styles.itineraryItem}>
+              tempSchedule.map((item) => (
+                <View key={item.id} style={styles.itineraryItem}>
                   <Text style={styles.itemTime}>{item.start}</Text>
                   <View style={styles.itemContent}>
                     <Text style={styles.itemGoal}>{item.goalTitle}</Text>

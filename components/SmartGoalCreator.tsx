@@ -8,7 +8,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useGoalsStore, {
   GoalCategory,
   GoalPriority,
+  GoalTemplate,
   Step,
   WorkoutEnvironment,
 } from "../store/useGoalsStore";
@@ -24,6 +25,8 @@ type Props = {
   editId?: string | null;
   onClose: () => void;
 };
+
+// ==================== CONSTANTES GLOBALES ====================
 const CATEGORY_SUBCATEGORIES: Record<GoalCategory, string[]> = {
   Fitness: [
     "General",
@@ -36,14 +39,13 @@ const CATEGORY_SUBCATEGORIES: Record<GoalCategory, string[]> = {
     "Resistencia",
     "Movilidad",
   ],
-  
   Estudio: ["General", "Pomodoro", "Repaso", "Exámenes", "Lectura"],
   Carrera: ["General", "Portafolio", "CV", "Entrevistas", "Postulaciones"],
   Salud: ["General", "Sueño", "Nutrición", "Movimiento", "Autocuidado"],
   Finanzas: ["General", "Presupuesto", "Ahorro", "Inversión", "Deudas"],
   Otro: ["General", "Productividad", "Hábito", "Aprendizaje", "Orden"],
-  
-}; 
+};
+
 const FITNESS_STYLES = [
   "General",
   "Arnold Split",
@@ -58,66 +60,72 @@ const FITNESS_STYLES = [
   "Resistencia",
 ];
 
-const WORKOUT_ENVIRONMENTS: WorkoutEnvironment[] = ["Casa", "Gimnasio", "Mixto"];
+const WORKOUT_ENVIRONMENTS: WorkoutEnvironment[] = [
+  "Casa",
+  "Gimnasio",
+  "Mixto",
+];
+
+const COLOR_PALETTE = [
+  "#ef4444",
+  "#f97316",
+  "#f59e0b",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#10b981",
+  "#14b8a6",
+  "#06b6d4",
+  "#0ea5e9",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#a855f7",
+  "#d946ef",
+  "#ec4899",
+  "#f43f5e",
+  "#64748b",
+  "#111827",
+  "#6b7280",
+];
 
 const styles = StyleSheet.create({
-  styleBox: {
-  width: 220,
-  padding: 18,
-  justifyContent: "space-between",
-},
-refreshTemplateBtn: {
-  marginTop: 16,
-  paddingVertical: 12,
-  paddingHorizontal: 16,
-  borderRadius: 14,
-  backgroundColor: "#f3f4f6",
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: "#e5e7eb",
-},
-refreshTemplateText: {
-  fontWeight: "800",
-  color: "#374151",
-  textAlign: "center",
-},
-
-  subSectionTitle: {
-  fontSize: 14,
-  fontWeight: "700",
-  color: "#374151",
-  marginBottom: 10,
-},
-  colorGrid: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  gap: 10,
-  marginTop: 12,
-},
-colorChip: {
-  width: 42,
-  height: 42,
-  borderRadius: 14,
-  alignItems: "center",
-  justifyContent: "center",
-  borderWidth: 2,
-  borderColor: "transparent",
-},
-colorChipActive: {
-  borderColor: "#111827",
-},
-resetColorBtn: {
-  marginTop: 14,
-  alignSelf: "flex-start",
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  borderRadius: 12,
-  backgroundColor: "#f3f4f6",
-},
-resetColorText: {
-  fontWeight: "700",
-  color: "#374151",
-},
+  styleBox: { width: 220, padding: 18, justifyContent: "space-between" },
+  refreshTemplateBtn: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  refreshTemplateText: {
+    fontWeight: "800",
+    color: "#374151",
+    textAlign: "center",
+  },
+  colorGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
+  colorChip: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  colorChipActive: { borderColor: "#111827" },
+  resetColorBtn: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+  },
+  resetColorText: { fontWeight: "700", color: "#374151" },
   container: { flex: 1, backgroundColor: "#f9fafb" },
   header: {
     flexDirection: "row",
@@ -189,9 +197,7 @@ resetColorText: {
   templateDesc: { fontSize: 14, color: "#6b7280", marginTop: 6 },
   templateMeta: { fontSize: 13, color: "#9ca3af", marginTop: 12 },
   previewContainer: { flexDirection: "row", gap: 20, marginTop: 12 },
-  previewBox: {
-    alignItems: "center",
-  },
+  previewBox: { alignItems: "center" },
   previewLabel: { fontSize: 14, color: "#6b7280", marginBottom: 8 },
   iconPreview: {
     width: 100,
@@ -273,7 +279,6 @@ resetColorText: {
     flex: 1,
     padding: 18,
     borderRadius: 20,
-    backgroundColor: "#111827",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -295,29 +300,53 @@ resetColorText: {
   },
   btnTextWhite: { color: "#fff", fontWeight: "700", fontSize: 17 },
   emptySteps: { color: "#9ca3af", fontStyle: "italic", marginTop: 8 },
+  // Estilos agregados que estaban al final
+  fitnessSummaryCard: {
+    marginTop: 18,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  fitnessSummaryTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 12,
+  },
+  fitnessSummaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  fitnessSummaryLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#6b7280",
+  },
+  fitnessSummaryValue: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#111827",
+  },
+  emptyTemplateBox: {
+    marginTop: 12,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  emptyTemplateText: {
+    color: "#6b7280",
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });
-const COLOR_PALETTE = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#eab308",
-  "#84cc16",
-  "#22c55e",
-  "#10b981",
-  "#14b8a6",
-  "#06b6d4",
-  "#0ea5e9",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#a855f7",
-  "#d946ef",
-  "#ec4899",
-  "#f43f5e",
-  "#64748b",
-  "#111827",
-  "#6b7280",
-];
 
 export default function SmartGoalCreator({ editId, onClose }: Props) {
   const tempIdCounter = useRef(0);
@@ -335,12 +364,14 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
 
   const accentColor = settings.accentColor || "#f59e0b";
 
+  // ==================== ESTADOS ====================
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<GoalCategory>("Otro");
   const [subCategory, setSubCategory] = useState<string>("General");
-  const [workoutEnvironment, setWorkoutEnvironment] =useState<WorkoutEnvironment>("Mixto");
-const [workoutStyle, setWorkoutStyle] = useState<string>("General");
+  const [workoutEnvironment, setWorkoutEnvironment] =
+    useState<WorkoutEnvironment>("Mixto");
+  const [workoutStyle, setWorkoutStyle] = useState<string>("General");
   const [priority, setPriority] = useState<GoalPriority>("2");
   const [deadline, setDeadline] = useState<string | undefined>(undefined);
   const [color, setColor] = useState<string>("#6b7280");
@@ -350,169 +381,167 @@ const [workoutStyle, setWorkoutStyle] = useState<string>("General");
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null,
   );
-const templatesByCategory = getTemplatesByCategory(category);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-const visibleTemplates = templatesByCategory.filter((tmpl) => {
-  const tmplSub = (tmpl as any).subCategory ?? "General";
-  const tmplStyle = (tmpl as any).workoutStyle ?? "General";
-  const tmplEnv = (tmpl as any).workoutEnvironment ?? "Mixto";
+  // ==================== COMPUTADOS ====================
+  const isFitness = category === "Fitness";
 
-  // Filtros base por subcategoría
-  const matchesSubCategory =
-    subCategory === "General" || tmplSub === subCategory;
+  const templatesByCategory = getTemplatesByCategory(category);
 
-  // Filtros específicos para Fitness
-  if (category === "Fitness") {
-    const matchesStyle =
-      workoutStyle === "General" || tmplStyle === workoutStyle;
+  const visibleTemplates = templatesByCategory.filter((tmpl) => {
+    const tmplTyped = tmpl as GoalTemplate;
+    const tmplSub = tmplTyped.subCategory ?? "General";
+    const tmplStyle = tmplTyped.workoutStyle ?? "General";
+    const tmplEnv = tmplTyped.workoutEnvironment ?? "Mixto";
 
-    const matchesEnvironment =
-      workoutEnvironment === "Mixto" || tmplEnv === workoutEnvironment || !tmplEnv;
+    const matchesSubCategory =
+      subCategory === "General" || tmplSub === subCategory;
 
-    return matchesSubCategory && matchesStyle && matchesEnvironment;
-  }
+    if (isFitness) {
+      const matchesStyle =
+        workoutStyle === "General" || tmplStyle === workoutStyle;
+      const matchesEnvironment =
+        workoutEnvironment === "Mixto" ||
+        tmplEnv === workoutEnvironment ||
+        !tmplEnv;
 
-  return matchesSubCategory;
-});
-  // Auto color/icon
-useEffect(() => {
-  const meta = getCategoryMeta(category);
-  setIcon(meta.icon);
-  setSubCategory("General");
-  setWorkoutEnvironment("Mixto");
-  setWorkoutStyle("General");
-
-  if (!customColor) {
-    setColor(meta.color);
-  }
-}, [category, customColor, getCategoryMeta]);
-
-  // Carga / reset
-useEffect(() => {
-  tempIdCounter.current = 0;
-
-  if (editId) {
-    const g = getGoalById(editId);
-    if (g) {
-      setTitle(g.title);
-      setDescription(g.description ?? "");
-      setCategory(g.category);
-      setPriority(g.priority);
-      setDeadline(g.deadline ?? undefined);
-      setColor(g.color);
-      setIcon(g.icon ?? "target");
-      setSteps(g.steps);
-      setSelectedTemplateId(g.templateId ?? null);
-      setSubCategory((g as any).subCategory ?? "General");
-      setWorkoutEnvironment(
-        (g as any).workoutEnvironment ?? "Mixto",
-      );
-      setWorkoutStyle((g as any).workoutStyle ?? "General");
+      return matchesSubCategory && matchesStyle && matchesEnvironment;
     }
-  } else {
-    setTitle("");
-    setDescription("");
-    setCategory("Otro");
-    setPriority("2");
-    setDeadline(undefined);
 
-    const meta = getCategoryMeta("Otro");
-    setColor(meta.color);
+    return matchesSubCategory;
+  });
+
+  // ==================== EFECTOS ====================
+  useEffect(() => {
+    const meta = getCategoryMeta(category);
     setIcon(meta.icon);
-    setSteps([]);
-    setSelectedTemplateId(null);
     setSubCategory("General");
     setWorkoutEnvironment("Mixto");
     setWorkoutStyle("General");
-  }
-}, [editId, getGoalById, getCategoryMeta]);
-const buildStepsFromSessions = (sessions: any[] = []): Step[] => {
-  const builtSteps: Step[] = [];
 
-  sessions.forEach((session) => {
-    session.exercises.forEach((ex: any) => {
-      builtSteps.push({
-        id: `temp-${tempIdCounter.current++}`,
-        title: ex.name ?? "Paso",
-        duration: ex.duration ?? 10,
-        completed: false,
-        order: builtSteps.length + 1,
-        sets: ex.sets,
-        reps: ex.reps,
-        rest: ex.rest,
-        session: session.name,
+    if (!customColor) {
+      setColor(meta.color);
+    }
+  }, [category, customColor, getCategoryMeta]);
+
+  useEffect(() => {
+    tempIdCounter.current = 0;
+
+    if (editId) {
+      const g = getGoalById(editId);
+      if (g) {
+        setTitle(g.title);
+        setDescription(g.description ?? "");
+        setCategory(g.category);
+        setPriority(g.priority);
+        setDeadline(g.deadline ?? undefined);
+        setColor(g.color);
+        setIcon(g.icon ?? "target");
+        setSteps(g.steps);
+        setSelectedTemplateId(g.templateId ?? null);
+        setSubCategory((g as GoalTemplate).subCategory ?? "General");
+        setWorkoutEnvironment(
+          (g as GoalTemplate).workoutEnvironment ?? "Mixto",
+        );
+        setWorkoutStyle((g as GoalTemplate).workoutStyle ?? "General");
+      }
+    } else {
+      // reset
+      setTitle("");
+      setDescription("");
+      setCategory("Otro");
+      setPriority("2");
+      setDeadline(undefined);
+      const meta = getCategoryMeta("Otro");
+      setColor(meta.color);
+      setIcon(meta.icon);
+      setSteps([]);
+      setSelectedTemplateId(null);
+      setSubCategory("General");
+      setWorkoutEnvironment("Mixto");
+      setWorkoutStyle("General");
+    }
+  }, [editId, getGoalById, getCategoryMeta]);
+
+  // ==================== FUNCIONES ====================
+  const buildStepsFromSessions = (sessions: any[] = []): Step[] => {
+    const builtSteps: Step[] = [];
+    sessions.forEach((session) => {
+      session.exercises.forEach((ex: any) => {
+        builtSteps.push({
+          id: `temp-${tempIdCounter.current++}`,
+          title: ex.name ?? "Paso",
+          duration: ex.duration ?? 10,
+          completed: false,
+          order: builtSteps.length + 1,
+          sets: ex.sets,
+          reps: ex.reps,
+          rest: ex.rest,
+          session: session.name,
+        });
       });
     });
-  });
+    return builtSteps;
+  };
 
-  return builtSteps;
-};
+  const applyTemplate = (tmplId: string) => {
+    const tmpl = useGoalsStore
+      .getState()
+      .templates.find((t) => t.id === tmplId);
+    if (!tmpl) return;
 
-  // Aplicar plantilla
-const applyTemplate = (tmplId: string) => {
-  const tmpl = useGoalsStore.getState().templates.find((t) => t.id === tmplId);
-  if (!tmpl) return;
+    const env = isFitness ? workoutEnvironment : undefined;
+    const tmplTyped = tmpl as GoalTemplate;
+    const chosenPlan = isFitness
+      ? (tmplTyped.environmentPlans?.[env as WorkoutEnvironment] ??
+        tmplTyped.environmentPlans?.Mixto ??
+        tmplTyped.defaultPlan ??
+        [])
+      : (tmplTyped.defaultPlan ?? []);
 
-  const env =
-    category === "Fitness"
-      ? workoutEnvironment
-      : undefined;
+    setSelectedTemplateId(tmplId);
+    setCategory(tmpl.category);
+    setSubCategory((tmpl as GoalTemplate).subCategory ?? "General");
+    setWorkoutEnvironment((tmpl as GoalTemplate).workoutEnvironment ?? "Mixto");
+    setWorkoutStyle((tmpl as GoalTemplate).workoutStyle ?? "General");
+    setTitle(tmpl.name ?? "");
+    setDescription(tmpl.description ?? "");
 
-  const chosenPlan =
-    category === "Fitness"
-      ? (tmpl as any).environmentPlans?.[env as WorkoutEnvironment] ??
-        (tmpl as any).environmentPlans?.Mixto ??
-        tmpl.defaultPlan ??
-        []
-      : tmpl.defaultPlan ?? [];
+    setSteps(buildStepsFromSessions(chosenPlan));
+  };
 
-  setSelectedTemplateId(tmplId);
-  setCategory(tmpl.category);
-  setSubCategory((tmpl as any).subCategory ?? "General");
-  setWorkoutEnvironment((tmpl as any).workoutEnvironment ?? "Mixto");
-  setWorkoutStyle((tmpl as any).workoutStyle ?? "General");
-  setTitle(tmpl.name ?? "");
-  setDescription(tmpl.description ?? "");
+  const refreshCurrentTemplate = () => {
+    if (!selectedTemplateId) {
+      Alert.alert("Sin plantilla", "Primero selecciona una plantilla.");
+      return;
+    }
 
-  const builtSteps = buildStepsFromSessions(chosenPlan);
-  setSteps(builtSteps);
-};
-const refreshCurrentTemplate = () => {
-  if (!selectedTemplateId) {
+    const tmpl = useGoalsStore
+      .getState()
+      .templates.find((t) => t.id === selectedTemplateId);
+    if (!tmpl) {
+      Alert.alert("Plantilla no encontrada");
+      return;
+    }
+
+    const tmplTyped = tmpl as GoalTemplate;
+    const chosenPlan = isFitness
+      ? (tmplTyped.environmentPlans?.[
+          workoutEnvironment as WorkoutEnvironment
+        ] ??
+        tmplTyped.environmentPlans?.Mixto ??
+        tmplTyped.defaultPlan ??
+        [])
+      : (tmplTyped.defaultPlan ?? []);
+
+    setSteps(buildStepsFromSessions(chosenPlan));
+
     Alert.alert(
-      "Sin plantilla",
-      "Primero selecciona una plantilla para poder reaplicarla.",
+      "Plantilla actualizada",
+      "Se reaplicó con tu selección actual.",
     );
-    return;
-  }
+  };
 
-  const tmpl = useGoalsStore
-    .getState()
-    .templates.find((t) => t.id === selectedTemplateId);
-
-  if (!tmpl) {
-    Alert.alert("Plantilla no encontrada", "La plantilla ya no existe.");
-    return;
-  }
-
-  const chosenPlan =
-    category === "Fitness"
-      ? (tmpl as any).environmentPlans?.[workoutEnvironment as WorkoutEnvironment] ??
-        (tmpl as any).environmentPlans?.Mixto ??
-        tmpl.defaultPlan ??
-        []
-      : tmpl.defaultPlan ?? [];
-
-  const builtSteps = buildStepsFromSessions(chosenPlan);
-  setSteps(builtSteps);
-
-  Alert.alert(
-    "Plantilla actualizada",
-    "Se reaplicó la rutina usando el entorno y estilo actuales.",
-  );
-};
-
-  // Pasos locales
   const addStep = () => {
     setSteps((prev) => [
       ...prev,
@@ -540,49 +569,47 @@ const refreshCurrentTemplate = () => {
     );
   };
 
-  // Guardar
-const handleSave = () => {
-  if (!title.trim()) {
-    Alert.alert("Error", "El título es obligatorio");
-    return;
-  }
-
-  const stepsForSave = editId
-    ? steps
-    : steps.map(({ id, ...rest }) => rest as Step);
-
-  const payload = {
-    title: title.trim(),
-    description: description.trim() || undefined,
-    category,
-    priority,
-    deadline,
-    color,
-    icon,
-    templateId: selectedTemplateId ?? undefined,
-    steps: stepsForSave,
-    subCategory,
-    workoutEnvironment:
-      category === "Fitness" ? workoutEnvironment : undefined,
-    workoutStyle: category === "Fitness" ? workoutStyle : undefined,
-  };
-
-  if (editId) {
-    updateGoal(editId, payload);
-  } else {
-    if (selectedTemplateId) {
-      createGoalFromTemplate(selectedTemplateId, payload);
-    } else {
-      addGoalSafe(payload);
+  const handleSave = () => {
+    if (!title.trim()) {
+      Alert.alert("Error", "El título es obligatorio");
+      return;
     }
-  }
 
-  onClose();
-};
+    const stepsForSave = editId
+      ? steps
+      : steps.map(({ id, ...rest }) => rest as Step);
+
+    const payload = {
+      title: title.trim(),
+      description: description.trim() || undefined,
+      category,
+      priority,
+      deadline,
+      color,
+      icon,
+      templateId: selectedTemplateId ?? undefined,
+      steps: stepsForSave,
+      subCategory,
+      workoutEnvironment: isFitness ? workoutEnvironment : undefined,
+      workoutStyle: isFitness ? workoutStyle : undefined,
+    };
+
+    if (editId) {
+      updateGoal(editId, payload);
+    } else {
+      if (selectedTemplateId) {
+        createGoalFromTemplate(selectedTemplateId, payload);
+      } else {
+        addGoalSafe(payload);
+      }
+    }
+
+    onClose();
+  };
 
   const handleDelete = () => {
     if (!editId) return;
-    Alert.alert("Eliminar", "¿Seguro que quieres eliminar esta meta?", [
+    Alert.alert("Eliminar meta", "¿Estás seguro?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -597,11 +624,14 @@ const handleSave = () => {
 
   const onConfirmDate = (date: Date) => {
     setDeadline(
-      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+        date.getDate(),
+      ).padStart(2, "0")}`,
     );
     setShowDatePicker(false);
   };
 
+  // ==================== RENDER ====================
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -678,120 +708,133 @@ const handleSave = () => {
             ))}
           </View>
         </View>
-        /* Subcategoría */
-<View style={styles.section}>
-  <Text style={styles.label}>Subcategoría</Text>
-  <View style={styles.row}>
-    {(CATEGORY_SUBCATEGORIES[category] ?? ["General"]).map((sub) => (
-      <TouchableOpacity
-        key={sub}
-        onPress={() => setSubCategory(sub)}
-        style={[styles.chip, subCategory === sub && styles.chipActive]}
-      >
-        <Text
-          style={[
-            styles.chipText,
-            subCategory === sub && styles.chipTextActive,
-          ]}
-        >
-          {sub}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</View>
-{category === "Fitness" && (
-  <View style={styles.section}>
-    <Text style={styles.label}>Entorno de entrenamiento</Text>
-    <View style={styles.row}>
-      {WORKOUT_ENVIRONMENTS.map((env) => (
-        <TouchableOpacity
-          key={env}
-          onPress={() => setWorkoutEnvironment(env)}
-          style={[
-            styles.chip,
-            workoutEnvironment === env && styles.chipActive,
-          ]}
-        >
-          <Text
-            style={[
-              styles.chipText,
-              workoutEnvironment === env && styles.chipTextActive,
-            ]}
-          >
-            {env}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
 
-    <Text style={[styles.label, { marginTop: 16 }]}>Estilo de rutina</Text>
-    <ScrollView
-    
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.templateScroll}
-    >
-      <TouchableOpacity
-  onPress={refreshCurrentTemplate}
-  style={styles.refreshTemplateBtn}
->
-  <Text style={styles.refreshTemplateText}>
-    Reaplicar plantilla con selección actual
-  </Text>
-</TouchableOpacity>
-      {FITNESS_STYLES.map((styleName) => (
-        <TouchableOpacity
-          key={styleName}
-          onPress={() => setWorkoutStyle(styleName)}
-          style={[
-            styles.templateBox,
-            styles.styleBox,
-            workoutStyle === styleName && styles.templateActive,
-          ]}
-        >
-          <Text style={styles.templateTitle}>{styleName}</Text>
-          <Text style={styles.templateDesc}>
-            {styleName === "General"
-              ? "Rutina base flexible"
-              : `Plan adaptado para ${workoutEnvironment.toLowerCase()}`}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-)}
+        {/* Subcategoría */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Subcategoría</Text>
+          <View style={styles.row}>
+            {(CATEGORY_SUBCATEGORIES[category] ?? ["General"]).map((sub) => (
+              <TouchableOpacity
+                key={sub}
+                onPress={() => setSubCategory(sub)}
+                style={[styles.chip, subCategory === sub && styles.chipActive]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    subCategory === sub && styles.chipTextActive,
+                  ]}
+                >
+                  {sub}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-        {/* Plantillas */}
-   {visibleTemplates.length > 0 && (
-  <View style={styles.section}>
-    <Text style={styles.label}>Plantillas rápidas</Text>
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.templateScroll}
-    >
-      {visibleTemplates.map((tmpl) => (
-        <TouchableOpacity
-          key={tmpl.id}
-          onPress={() => applyTemplate(tmpl.id)}
-          style={[
-            styles.templateBox,
-            selectedTemplateId === tmpl.id && styles.templateActive,
-          ]}
-        >
-          <Text style={styles.templateTitle}>{tmpl.name}</Text>
-          <Text style={styles.templateDesc}>{tmpl.description}</Text>
-         <Text style={styles.templateMeta}>
-  {category === "Fitness"
-    ? `${(tmpl as any).subCategory ?? "General"} • ${(tmpl as any).workoutStyle ?? "General"} • ${(tmpl as any).workoutEnvironment ?? "Mixto"}`
-    : `${(tmpl as any).subCategory ?? "General"} • ${tmpl.frequencyPerWeek || 1}x/semana`}
-</Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-)}
+        {/* Fitness: Entorno + Estilo */}
+        {isFitness && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Entorno de entrenamiento</Text>
+            <View style={styles.row}>
+              {WORKOUT_ENVIRONMENTS.map((env) => (
+                <TouchableOpacity
+                  key={env}
+                  onPress={() => setWorkoutEnvironment(env)}
+                  style={[
+                    styles.chip,
+                    workoutEnvironment === env && styles.chipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      workoutEnvironment === env && styles.chipTextActive,
+                    ]}
+                  >
+                    {env}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 16 }]}>
+              Estilo de rutina
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.templateScroll}
+            >
+              <TouchableOpacity
+                onPress={refreshCurrentTemplate}
+                style={styles.refreshTemplateBtn}
+              >
+                <Text style={styles.refreshTemplateText}>
+                  Reaplicar plantilla con selección actual
+                </Text>
+              </TouchableOpacity>
+
+              {FITNESS_STYLES.map((styleName) => (
+                <TouchableOpacity
+                  key={styleName}
+                  onPress={() => setWorkoutStyle(styleName)}
+                  style={[
+                    styles.templateBox,
+                    styles.styleBox,
+                    workoutStyle === styleName && styles.templateActive,
+                  ]}
+                >
+                  <Text style={styles.templateTitle}>{styleName}</Text>
+                  <Text style={styles.templateDesc}>
+                    {styleName === "General"
+                      ? "Rutina base flexible"
+                      : `Plan adaptado para ${workoutEnvironment.toLowerCase()}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Plantillas rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Plantillas rápidas</Text>
+
+          {visibleTemplates.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.templateScroll}
+            >
+              {visibleTemplates.map((tmpl) => (
+                <View key={tmpl.id} style={{ marginRight: 16 }}>
+                  <TouchableOpacity
+                    onPress={() => applyTemplate(tmpl.id)}
+                    style={[
+                      styles.templateBox,
+                      selectedTemplateId === tmpl.id && styles.templateActive,
+                    ]}
+                  >
+                    <Text style={styles.templateTitle}>{tmpl.name}</Text>
+                    <Text style={styles.templateDesc}>{tmpl.description}</Text>
+                    <Text style={styles.templateMeta}>
+                      {isFitness
+                        ? `${(tmpl as GoalTemplate).subCategory ?? "General"} • ${(tmpl as GoalTemplate).workoutStyle ?? "General"} • ${(tmpl as GoalTemplate).workoutEnvironment ?? "Mixto"}`
+                        : `${(tmpl as GoalTemplate).subCategory ?? "General"} • ${tmpl.frequencyPerWeek || 1}x/semana`}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyTemplateBox}>
+              <Text style={styles.emptyTemplateText}>
+                No hay plantillas que coincidan con tu selección actual.
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Prioridad */}
         <View style={styles.section}>
@@ -842,60 +885,61 @@ const handleSave = () => {
           )}
         </View>
 
-     /* Vista previa + selector de color */
-<View style={styles.section}>
-  <Text style={styles.label}>Vista previa</Text>
+        {/* Vista previa + Color */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Vista previa</Text>
+          <View style={styles.previewContainer}>
+            <View style={styles.previewBox}>
+              <Text style={styles.previewLabel}>Icono</Text>
+              <View style={styles.iconPreview}>
+                <Feather name={icon as any} size={50} color="#374151" />
+              </View>
+            </View>
 
-  <View style={styles.previewContainer}>
-    <View style={styles.previewBox}>
-      <Text style={styles.previewLabel}>Icono fijo</Text>
-      <View style={styles.iconPreview}>
-        <Feather name={icon as any} size={50} color="#374151" />
-      </View>
-    </View>
+            <View style={styles.previewBox}>
+              <Text style={styles.previewLabel}>Color</Text>
+              <View style={[styles.colorPreview, { backgroundColor: color }]} />
+            </View>
+          </View>
 
-    <View style={styles.previewBox}>
-      <Text style={styles.previewLabel}>Color actual</Text>
-      <View style={[styles.colorPreview, { backgroundColor: color }]} />
-    </View>
-  </View>
+          <Text style={[styles.label, { marginTop: 18 }]}>Elegir color</Text>
+          <View style={styles.colorGrid}>
+            {COLOR_PALETTE.map((c) => {
+              const active = c === color;
+              return (
+                <TouchableOpacity
+                  key={c}
+                  onPress={() => {
+                    setColor(c);
+                    setCustomColor(true);
+                  }}
+                  style={[
+                    styles.colorChip,
+                    { backgroundColor: c },
+                    active && styles.colorChipActive,
+                  ]}
+                >
+                  {active && <Feather name="check" size={18} color="#fff" />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-  <Text style={[styles.label, { marginTop: 18 }]}>Elegir color</Text>
-  <View style={styles.colorGrid}>
-    {COLOR_PALETTE.map((c) => {
-      const active = c === color;
-      return (
-        <TouchableOpacity
-          key={c}
-          onPress={() => {
-            setColor(c);
-            setCustomColor(true);
-          }}
-          style={[
-            styles.colorChip,
-            { backgroundColor: c },
-            active ? styles.colorChipActive : undefined,
-          ]}
-        >
-          {active ? <Feather name="check" size={18} color="#fff" /> : null}
-        </TouchableOpacity>
-      );
-    })}
-  </View>
+          <TouchableOpacity
+            onPress={() => {
+              const meta = getCategoryMeta(category);
+              setColor(meta.color);
+              setCustomColor(false);
+            }}
+            style={styles.resetColorBtn}
+          >
+            <Text style={styles.resetColorText}>
+              Restablecer color por categoría
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-  <TouchableOpacity
-    onPress={() => {
-      const meta = getCategoryMeta(category);
-      setColor(meta.color);
-      setCustomColor(false);
-    }}
-    style={styles.resetColorBtn}
-  >
-    <Text style={styles.resetColorText}>Restablecer color por categoría</Text>
-  </TouchableOpacity>
-</View>
-
-        {/* Pasos */}
+        {/* Pasos / Ejercicios */}
         <View style={styles.section}>
           <Text style={styles.label}>Pasos / Ejercicios</Text>
           {steps.length === 0 && (
@@ -903,6 +947,7 @@ const handleSave = () => {
               Aún no hay pasos. Agrega uno para empezar.
             </Text>
           )}
+
           {steps.map((step) => (
             <View key={step.id} style={styles.stepCard}>
               <TextInput
@@ -977,10 +1022,39 @@ const handleSave = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: 100 }} />
+        {/* Resumen Fitness (solo visible en Fitness) */}
+        {isFitness && (
+          <View style={styles.fitnessSummaryCard}>
+            <Text style={styles.fitnessSummaryTitle}>Configuración actual</Text>
+            <View style={styles.fitnessSummaryRow}>
+              <Text style={styles.fitnessSummaryLabel}>Entorno</Text>
+              <Text style={styles.fitnessSummaryValue}>
+                {workoutEnvironment}
+              </Text>
+            </View>
+            <View style={styles.fitnessSummaryRow}>
+              <Text style={styles.fitnessSummaryLabel}>Estilo</Text>
+              <Text style={styles.fitnessSummaryValue}>{workoutStyle}</Text>
+            </View>
+            <View style={styles.fitnessSummaryRow}>
+              <Text style={styles.fitnessSummaryLabel}>Subcategoría</Text>
+              <Text style={styles.fitnessSummaryValue}>{subCategory}</Text>
+            </View>
+            <View style={styles.fitnessSummaryRow}>
+              <Text style={styles.fitnessSummaryLabel}>
+                Plantillas visibles
+              </Text>
+              <Text style={styles.fitnessSummaryValue}>
+                {visibleTemplates.length}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Botones fijos abajo */}
+      {/* Footer fijo */}
       <View style={styles.footer}>
         {editId && (
           <TouchableOpacity onPress={handleDelete} style={styles.btnDanger}>

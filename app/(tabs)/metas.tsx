@@ -188,6 +188,57 @@ const styles = StyleSheet.create({
   },
 });
 
+/* ============================
+   Sub-componente MetaCard
+   ============================ */
+const MetaCard = ({
+  item,
+  onPress,
+  colors,
+}: {
+  item: Goal;
+  onPress: (id: string) => void;
+  colors: any;
+}) => {
+  const done = item.steps.filter((s) => s.completed).length;
+  const total = item.steps.length || 1;
+  const percent = Math.round((done / total) * 100);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.card,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+      onPress={() => onPress(item.id)}
+    >
+      <View style={styles.cardHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
+          {item.description ? (
+            <Text style={[styles.cardDesc, { color: colors.subtext }]}>
+              {item.description}
+            </Text>
+          ) : null}
+          <Text style={[styles.progressText, { color: colors.text }]}>
+            Progreso: {percent}% ({done}/{total} pasos)
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.cardBadge,
+            { backgroundColor: item.color || "#6b7280" },
+          ]}
+        >
+          <Feather name={item.icon as any} size={28} color="#fff" />
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export default function MetasScreen() {
   const goals = useGoalsStore((s) => s.getGoalsListMemo());
   const startFocus = useGoalsStore((s) => s.startFocus);
@@ -251,43 +302,6 @@ export default function MetasScreen() {
   const openDetail = (id: string) => setExpandedId(id);
   const closeDetail = () => setExpandedId(null);
 
-  const renderItem = ({ item }: { item: Goal }) => {
-    const done = item.steps.filter((s) => s.completed).length;
-    const total = item.steps.length || 1;
-    const percent = Math.round((done / total) * 100);
-
-    return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: card, borderColor: border }]}
-        onPress={() => openDetail(item.id)}
-      >
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.cardTitle, { color: text }]}>
-              {item.title}
-            </Text>
-            {item.description ? (
-              <Text style={[styles.cardDesc, { color: subtext }]}>
-                {item.description}
-              </Text>
-            ) : null}
-            <Text style={[styles.progressText, { color: text }]}>
-              Progreso: {percent}% ({done}/{total} pasos)
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.cardBadge,
-              { backgroundColor: item.color || "#6b7280" },
-            ]}
-          >
-            <Feather name={item.icon as any} size={28} color="#fff" />
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   const expandedGoal = expandedId ? getGoalById(expandedId) : null;
 
   return (
@@ -317,7 +331,13 @@ export default function MetasScreen() {
           <FlatList
             data={goals}
             keyExtractor={(item) => item.id}
-            renderItem={renderItem}
+            renderItem={({ item }) => (
+              <MetaCard
+                item={item}
+                onPress={openDetail}
+                colors={{ card, border, text, subtext }}
+              />
+            )}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
           />
