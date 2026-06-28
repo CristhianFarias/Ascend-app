@@ -1,11 +1,10 @@
 // app/(tabs)/metas.tsx
 import { Feather } from "@expo/vector-icons";
-import { useTheme } from "@react-navigation/native";
-import React, { useState } from "react";
+import React from "react";
 import {
-  Alert,
   FlatList,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,7 +15,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import FocusMode from "../../components/Focusmode";
 import SmartGoalCreator from "../../components/SmartGoalCreator";
-import useGoalsStore, { Goal } from "../../store/useGoalsStore";
+import { useMetasViewModel } from "../../hooks/useMetasViewModel";
+import { Goal } from "../../store/useGoalsStore";
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: "#f9fafb" },
@@ -88,6 +88,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     marginTop: 40,
+  },
+  webCreatorOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1000,
+    elevation: 1000,
   },
 
   // Detalle modal
@@ -240,70 +249,25 @@ const MetaCard = ({
 };
 
 export default function MetasScreen() {
-  const goals = useGoalsStore((s) => s.getGoalsListMemo());
-  const startFocus = useGoalsStore((s) => s.startFocus);
-  const deleteGoal = useGoalsStore((s) => s.deleteGoal);
-  const addGoalSafe = useGoalsStore((s) => s.addGoalSafe);
-  const getGoalById = useGoalsStore((s) => s.getGoalById);
-  const toggleStep = useGoalsStore((s) => s.toggleStep);
-  const areAllStepsCompleted = useGoalsStore((s) => s.areAllStepsCompleted);
-  const markGoalCompletedToday = useGoalsStore((s) => s.markGoalCompletedToday);
-  const settings = useGoalsStore((s) => s.settings);
+  const {
+    goals,
+    startFocus,
+    toggleStep,
+    showCreator,
+    editingId,
+    expandedGoal,
+    openCreate,
+    openEdit,
+    closeCreator,
+    openDetail,
+    closeDetail,
+    handleDelete,
+    handleDuplicate,
+    markExpandedGoalToday,
+    colors,
+  } = useMetasViewModel();
 
-  const { colors, dark } = useTheme();
-  const bg = colors.background ?? (dark ? "#0b1220" : "#f9fafb");
-  const card = colors.card ?? (dark ? "#1f2937" : "#ffffff");
-  const text = colors.text ?? (dark ? "#f3f4f6" : "#111827");
-  const subtext = colors.border ?? (dark ? "#9ca3af" : "#6b7280");
-  const border = colors.border ?? (dark ? "#374151" : "#e5e7eb");
-  const primary = colors.primary ?? settings.accentColor ?? "#111827";
-
-  const accentColor = settings.accentColor || primary;
-
-  const [showCreator, setShowCreator] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const openCreate = () => {
-    setEditingId(null);
-    setShowCreator(true);
-  };
-
-  const openEdit = (id: string) => {
-    setEditingId(id);
-    setShowCreator(true);
-  };
-
-  const handleDelete = (id: string) => {
-    Alert.alert("Eliminar meta", "¿Seguro que quieres eliminar esta meta?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Eliminar", style: "destructive", onPress: () => deleteGoal(id) },
-    ]);
-  };
-
-  const handleDuplicate = (id: string) => {
-    const g = getGoalById(id);
-    if (!g) return;
-    const clone = {
-      ...g,
-      id: `${g.id}-copy-${Date.now()}`,
-      title: `${g.title} (copia)`,
-      steps: g.steps.map((s) => ({
-        ...s,
-        id: `${s.id}-copy-${Date.now()}`,
-        completed: false,
-      })),
-      totalFocusMinutes: 0,
-      completedDates: [],
-    };
-    addGoalSafe(clone as any);
-  };
-
-  const openDetail = (id: string) => setExpandedId(id);
-  const closeDetail = () => setExpandedId(null);
-
-  const expandedGoal = expandedId ? getGoalById(expandedId) : null;
-
+  const { bg, card, text, subtext, border, primary, accentColor } = colors;
   return (
     <SafeAreaView style={[styles.page, { backgroundColor: bg }]}>
       <View style={styles.container}>
@@ -344,23 +308,28 @@ export default function MetasScreen() {
         )}
 
         {/* Creator modal */}
-        <Modal
-          visible={showCreator}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
-          <SafeAreaView
-            style={[styles.detailContainer, { backgroundColor: bg }]}
+        {Platform.OS === "web" && showCreator ? (
+          <View
+            style={[
+              styles.webCreatorOverlay,
+              { backgroundColor: bg },
+            ]}
           >
-            <SmartGoalCreator
-              editId={editingId}
-              onClose={() => {
-                setShowCreator(false);
-                setEditingId(null);
-              }}
-            />
-          </SafeAreaView>
-        </Modal>
+            <SmartGoalCreator editId={editingId} onClose={closeCreator} />
+          </View>
+        ) : (
+          <Modal
+            visible={showCreator}
+            animationType="slide"
+            presentationStyle="pageSheet"
+          >
+            <SafeAreaView
+              style={[styles.detailContainer, { backgroundColor: bg }]}
+            >
+              <SmartGoalCreator editId={editingId} onClose={closeCreator} />
+            </SafeAreaView>
+          </Modal>
+        )}
 
         {/* Detalle modal */}
         <Modal visible={!!expandedGoal} animationType="slide">
@@ -539,20 +508,7 @@ export default function MetasScreen() {
                       styles.todayBtn,
                       { backgroundColor: card, borderColor: border },
                     ]}
-                    onPress={() => {
-                      if (areAllStepsCompleted(expandedGoal.id)) {
-                        markGoalCompletedToday(expandedGoal.id);
-                        Alert.alert(
-                          "¡Completado!",
-                          "Meta marcada como cumplida hoy.",
-                        );
-                      } else {
-                        Alert.alert(
-                          "No listo",
-                          "Completa todos los pasos primero.",
-                        );
-                      }
-                    }}
+                    onPress={markExpandedGoalToday}
                   >
                     <Text style={[styles.btnTextDark, { color: text }]}>
                       Marcar como cumplida hoy
@@ -598,3 +554,4 @@ export default function MetasScreen() {
     </SafeAreaView>
   );
 }
+

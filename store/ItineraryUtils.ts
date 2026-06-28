@@ -79,6 +79,11 @@ export function addMinutes(timeStr: string | undefined, mins: number): string {
   return minutesToTimeStr(base + Math.max(0, Math.floor(mins || 0)));
 }
 
+export function getTodayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // ----------------------
 // buildItineraryForDate
 // - Genera ItineraryItem[] desde un array de goals (no muta nada).

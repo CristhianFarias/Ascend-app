@@ -1,356 +1,48 @@
-import { useTheme } from "@react-navigation/native";
-import React, { useMemo, useState } from "react";
+import React from "react";
 import {
-  Alert,
   Dimensions,
   SafeAreaView,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { LineChart } from "react-native-chart-kit";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { getTodayKey } from "../../store/ItineraryUtils";
-import useGoalsStore, { Goal } from "../../store/useGoalsStore";
 
-type RangeType = "week" | "month" | "year";
-
-const dateKeyToDate = (key: string) => {
-  const [y, m, d] = key.split("-").map((x) => Number(x) || 0);
-  return new Date(y, m - 1, d);
-};
-
-const formatMonthShort = (monthIndex: number) =>
-  new Date(2025, monthIndex, 1).toLocaleString("es-ES", { month: "short" });
+import {
+  dateKeyToDate,
+  ProgressRange,
+  useProgressViewModel,
+} from "../../hooks/useProgressViewModel";
+import { Goal } from "../../store/useGoalsStore";
 
 export default function ProgresoScreen() {
-  const getGoalsListMemo = useGoalsStore((s) => s.getGoalsListMemo);
-  const getGlobalStats = useGoalsStore((s) => s.getGlobalStats);
-  const getHeatmapData = useGoalsStore((s) => s.getHeatmapData);
-  const getStreakHistory = useGoalsStore((s) => s.getStreakHistory);
-  const markTodayCompleteIfEligible = useGoalsStore(
-    (s) => s.markTodayCompleteIfEligible,
-  );
-  const dailyCompletionMap = useGoalsStore((s) => s.dailyCompletionMap);
-  const settings = useGoalsStore((s) => s.settings);
+  const {
+    range,
+    setRange,
+    goals,
+    stats,
+    todayKey,
+    todayPercent,
+    todayCompletedCount,
+    activeGoalIds,
+    todayIsComplete,
+    heatmapData,
+    aggregatedChartData,
+    chartConfig,
+    markedDates,
+    handleShareProgress,
+    markTodayStrict,
+    markTodayWithFeedback,
+    colors,
+    dark,
+  } = useProgressViewModel();
 
-  const [range, setRange] = useState<RangeType>("month");
-
-  const goals = getGoalsListMemo();
-  const stats = getGlobalStats();
-
-  const todayKey = getTodayKey();
-
-  const activeGoalIds = useMemo(
-    () =>
-      goals
-        .filter(
-          (g) =>
-            g.status === "active" &&
-            Array.isArray(g.steps) &&
-            g.steps.length > 0,
-        )
-        .map((g) => g.id),
-    [goals],
-  );
-
-  const todayCompletedGoals = dailyCompletionMap[todayKey] ?? [];
-  const todayCompletedCount = activeGoalIds.filter((id) =>
-    todayCompletedGoals.includes(id),
-  ).length;
-  const todayPercent =
-    activeGoalIds.length === 0
-      ? 0
-      : Math.round((todayCompletedCount / activeGoalIds.length) * 100);
-  const todayIsComplete =
-    activeGoalIds.length > 0 &&
-    activeGoalIds.every((id) => todayCompletedGoals.includes(id));
-
-  const storedAccent = settings.accentColor || "#f59e0b";
-
-  const { colors, dark } = useTheme();
-  const bg = colors.background ?? (dark ? "#0b1220" : "#f8fafc");
-  const card = colors.card ?? (dark ? "#111827" : "#ffffff");
-  const text = colors.text ?? (dark ? "#f3f4f6" : "#0f172a");
-  const subtext = colors.border ?? (dark ? "#94a3b8" : "#64748b");
-  const border = colors.border ?? (dark ? "#334155" : "#e2e8f0");
-  const primary = colors.primary ?? storedAccent;
-
-  const successColor = "#22c55e";
-  const streakColor = primary;
-
-  const hexToRgba = (hex: string, opacity: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  };
-
-  const handleShareProgress = async () => {
-    const message = `
-¡Mi progreso en Ascend! 🚀
-
-🔥 Racha actual: ${stats.globalStreak} días
-🏆 Mejor racha: ${stats.bestStreak} días
-🎯 Metas totales: ${stats.totalGoals}
-⏱️ Minutos enfocados: ${stats.totalFocusMinutes}m
-✅ Consistencia: ${stats.consistency}%
-
-¡Sigo avanzando! 💪
-    `.trim();
-
-    try {
-      await Share.share({
-        message,
-        title: "Mi progreso en Ascend",
-      });
-    } catch {
-      Alert.alert("Error", "No se pudo compartir");
-    }
-  };
-
-  const heatmapData = useMemo(() => {
-    const today = new Date();
-
-    if (range === "week") {
-      return getHeatmapData("week");
-    }
-
-    if (range === "month") {
-      const result = [];
-      const year = today.getFullYear();
-      const month = today.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        if (date > today) break;
-
-        const key = `${date.getFullYear()}-${String(
-          date.getMonth() + 1,
-        ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-        const goalIds = dailyCompletionMap[key] ?? [];
-        result.push({
-          date: key,
-          completed: goalIds.length > 0,
-          count: goalIds.length,
-          goalIds,
-        });
-      }
-
-      return result;
-    }
-
-    const result = [];
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth();
-
-    for (let month = 0; month <= currentMonth; month++) {
-      const monthEnd = new Date(currentYear, month + 1, 0);
-
-      let count = 0;
-      const goalIdsSet = new Set<string>();
-
-      for (let day = 1; day <= monthEnd.getDate(); day++) {
-        const date = new Date(currentYear, month, day);
-        if (date > today) break;
-
-        const key = `${date.getFullYear()}-${String(
-          date.getMonth() + 1,
-        ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-
-        const goalIds = dailyCompletionMap[key] ?? [];
-        count += goalIds.length;
-        goalIds.forEach((id) => goalIdsSet.add(id));
-      }
-
-      const key = `${currentYear}-${String(month + 1).padStart(2, "0")}-01`;
-
-      result.push({
-        date: key,
-        completed: count > 0,
-        count,
-        goalIds: Array.from(goalIdsSet),
-      });
-    }
-
-    return result;
-  }, [range, dailyCompletionMap, getHeatmapData]);
-
-  const baseStreakHistory = useMemo(() => {
-    return getStreakHistory(range === "year" ? "all" : range);
-  }, [range, getStreakHistory]);
-
-  const aggregatedChartData = useMemo(() => {
-    const labels: string[] = [];
-    const counts: number[] = [];
-    const streaks: number[] = [];
-
-    if (range === "week") {
-      heatmapData.forEach((h, i) => {
-        labels.push(dateKeyToDate(h.date).getDate().toString());
-        counts.push(h.count);
-        streaks.push(baseStreakHistory[i]?.streak || 0);
-      });
-    } else if (range === "month") {
-      const weeks = Array.from({ length: 5 }, () => ({
-        count: [] as number[],
-        streak: [] as number[],
-      }));
-
-      heatmapData.forEach((h, i) => {
-        const weekIndex = Math.floor(i / 7);
-        if (weekIndex < 5) {
-          weeks[weekIndex].count.push(h.count);
-          weeks[weekIndex].streak.push(
-            baseStreakHistory.find((s) => s.date === h.date)?.streak || 0,
-          );
-        }
-      });
-
-      weeks.forEach((week, i) => {
-        if (week.count.length > 0) {
-          const avgCount =
-            week.count.reduce((a, b) => a + b, 0) / week.count.length;
-          counts.push(Math.round(avgCount));
-          const maxStreak = week.streak.reduce((m, v) => Math.max(m, v), 0);
-          streaks.push(maxStreak);
-          labels.push(`Sem ${i + 1}`);
-        }
-      });
-    } else {
-      const months = Array.from({ length: 12 }, () => ({
-        count: [] as number[],
-        streak: [] as number[],
-      }));
-
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth();
-
-      for (let m = 0; m <= currentMonth; m++) {
-        const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
-
-        for (let d = 1; d <= daysInMonth; d++) {
-          const dateStr = `${currentYear}-${String(m + 1).padStart(2, "0")}-${String(
-            d,
-          ).padStart(2, "0")}`;
-          const item = heatmapData.find((h) => h.date === dateStr);
-          if (item) {
-            months[m].count.push(item.count);
-            const streakItem = baseStreakHistory.find(
-              (s) => s.date === dateStr,
-            );
-            months[m].streak.push(streakItem?.streak || 0);
-          }
-        }
-      }
-
-      months.forEach((month, i) => {
-        if (month.count.length > 0) {
-          const totalCount = month.count.reduce((a, b) => a + b, 0);
-          counts.push(totalCount);
-          const maxStreak = month.streak.reduce((m, v) => Math.max(m, v), 0);
-          streaks.push(maxStreak);
-          labels.push(formatMonthShort(i));
-        }
-      });
-    }
-
-    return {
-      labels,
-      datasets: [
-        {
-          data: counts,
-          color: (opacity = 1) => hexToRgba(successColor, opacity),
-          strokeWidth: 3,
-        },
-        {
-          data: streaks,
-          color: (opacity = 1) => hexToRgba(streakColor, opacity),
-          strokeWidth: 3,
-        },
-      ],
-    };
-  }, [heatmapData, baseStreakHistory, range, successColor, streakColor]);
-
-  const chartConfig = {
-    backgroundGradientFrom: dark ? "#0b1220" : "#f1f5f9",
-    backgroundGradientFromOpacity: 1,
-    backgroundGradientTo: dark ? "#111827" : "#ffffff",
-    backgroundGradientToOpacity: 1,
-    decimalPlaces: 0,
-    color: (opacity = 1) => {
-      const hex = (colors.text ?? (dark ? "#f3f4f6" : "#1f2937")).replace(
-        "#",
-        "",
-      );
-      return `rgba(${parseInt(hex.slice(0, 2), 16)}, ${parseInt(
-        hex.slice(2, 4),
-        16,
-      )}, ${parseInt(hex.slice(4, 6), 16)}, ${opacity})`;
-    },
-    labelColor: (opacity = 1) =>
-      dark ? `rgba(243,244,246,${opacity})` : `rgba(31,41,55,${opacity})`,
-    propsForDots: { r: "5", strokeWidth: "2", stroke: primary },
-    propsForBackgroundLines: {
-      strokeDasharray: "5,5",
-      stroke: border,
-      strokeWidth: 1,
-    },
-    propsForLabels: { fontSize: 12, fontWeight: "600" as const },
-  };
-
-  const markedDates = useMemo(() => {
-    const marks: any = {};
-
-    Object.keys(dailyCompletionMap).forEach((date) => {
-      const goalIds = dailyCompletionMap[date] ?? [];
-      if (!goalIds.length) return;
-
-      marks[date] = {
-        ...(marks[date] || {}),
-        dots: [
-          ...(marks[date]?.dots || []),
-          {
-            key: "completed",
-            color: successColor,
-          },
-        ],
-      };
-    });
-
-    goals.forEach((goal) => {
-      if (!goal.deadline) return;
-
-      marks[goal.deadline] = {
-        ...(marks[goal.deadline] || {}),
-        dots: [
-          ...(marks[goal.deadline]?.dots || []),
-          {
-            key: goal.id,
-            color: goal.color || primary,
-          },
-        ],
-      };
-    });
-
-    marks[todayKey] = {
-      ...(marks[todayKey] || {}),
-      selected: true,
-      selectedColor: primary,
-      selectedTextColor: "#ffffff",
-      dots: [...(marks[todayKey]?.dots || [])],
-    };
-
-    return marks;
-  }, [dailyCompletionMap, goals, primary, successColor, todayKey]);
-
+  const { bg, card, text, subtext, border, primary, successColor, streakColor } =
+    colors;
   const renderGoalProgress = ({ item }: { item: Goal }) => {
     const done = item.steps.filter((s) => s.completed).length;
     const total = item.steps.length || 1;
@@ -534,17 +226,7 @@ export default function ProgresoScreen() {
               </View>
 
               <TouchableOpacity
-                onPress={() => {
-                  const ok = markTodayCompleteIfEligible();
-                  if (ok) {
-                    Alert.alert("¡Día marcado!", "La racha se actualizó.");
-                  } else {
-                    Alert.alert(
-                      "Aún no",
-                      "Completa todos los pasos de las metas activas para marcar el día.",
-                    );
-                  }
-                }}
+                onPress={markTodayStrict}
                 style={[styles.streakMiniBtn, { backgroundColor: primary }]}
               >
                 <Text style={styles.streakMiniBtnText}>Marcar hoy</Text>
@@ -555,7 +237,7 @@ export default function ProgresoScreen() {
 
         <View style={{ marginTop: 22 }}>
           <View style={styles.rangeSelector}>
-            {(["week", "month", "year"] as RangeType[]).map((item) => {
+            {(["week", "month", "year"] as ProgressRange[]).map((item) => {
               const active = range === item;
               return (
                 <TouchableOpacity
@@ -752,15 +434,7 @@ export default function ProgresoScreen() {
               styles.shadow,
               { backgroundColor: primary },
             ]}
-            onPress={() => {
-              const ok = markTodayCompleteIfEligible();
-              Alert.alert(
-                ok ? "Día marcado" : "No marcado",
-                ok
-                  ? "Se marcó el día completo"
-                  : "No se cumplen las condiciones",
-              );
-            }}
+            onPress={markTodayWithFeedback}
           >
             <Text style={styles.primaryBtnText}>
               {todayIsComplete ? "✓ Día listo" : "Marcar día si corresponde"}
@@ -1059,3 +733,4 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
 });
+

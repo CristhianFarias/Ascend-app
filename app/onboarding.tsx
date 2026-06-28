@@ -1,7 +1,8 @@
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useStoreHydration } from "../hooks/useStoreHydration";
 import { useGoalsStore } from "../store/useGoalsStore";
 
 /**
@@ -20,6 +21,10 @@ import { useGoalsStore } from "../store/useGoalsStore";
  */
 
 export default function OnboardingScreen() {
+  const hasHydrated = useStoreHydration();
+  const hasFinishedOnboarding = useGoalsStore(
+    (s) => s.hasFinishedOnboarding,
+  );
   /**
    * SOLO acciones del store
    */
@@ -34,6 +39,15 @@ export default function OnboardingScreen() {
     // reemplaza pantalla (evita volver atrás)
     router.replace("/(tabs)");
   };
+
+  if (!hasHydrated) {
+    return <View style={{ flex: 1, backgroundColor: "#0F172A" }} />;
+  }
+
+  if (hasFinishedOnboarding) {
+    // Si la bienvenida ya estaba completada, no dejamos al usuario atrapado aquí.
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>

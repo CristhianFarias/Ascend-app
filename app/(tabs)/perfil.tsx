@@ -1,126 +1,41 @@
 // app/(tabs)/perfil.tsx
 import { Feather } from "@expo/vector-icons";
-import { useTheme } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import useGoalsStore from "../../store/useGoalsStore";
+import { useProfileViewModel } from "../../hooks/useProfileViewModel";
 
 export default function PerfilScreen() {
-  // Tema react-navigation (proporcionado por ThemeProvider en _layout.tsx)
-  const { colors } = useTheme();
+  const {
+    accent,
+    setAccent,
+    backupText,
+    setBackupText,
+    userName,
+    setUserName,
+    userBio,
+    setUserBio,
+    stats,
+    isDark,
+    initials,
+    toggleTheme,
+    handleSetAccent,
+    handleBackup,
+    handleRestore,
+    confirmReset,
+    colors,
+  } = useProfileViewModel();
 
-  // Preferencia guardada en el store ("light" | "dark" | "system")
-  const storedTheme = useGoalsStore((s) => s.settings.theme || "system");
-  // Accent persistido
-  const storedAccent = useGoalsStore((s) => s.settings.accentColor);
-  // Acciones del store
-  const setTheme = useGoalsStore((s) => s.setTheme);
-  const setAccentColor = useGoalsStore((s) => s.setAccentColor);
-  const getGlobalStats = useGoalsStore((s) => s.getGlobalStats);
-  const backupToJSON = useGoalsStore((s) => s.backupToJSON);
-  const restoreFromJSON = useGoalsStore((s) => s.restoreFromJSON);
-  const resetAll = useGoalsStore((s) => s.resetAll);
-
-  // Si el usuario eligió "system", obtenemos el scheme actual del dispositivo
-  const systemScheme = useColorScheme();
-  const effectiveTheme = storedTheme === "system" ? systemScheme : storedTheme;
-  const isDark = effectiveTheme === "dark";
-
-  // Estado local para controlar input del color antes de aplicar
-  const [accent, setAccent] = useState(storedAccent || "#f59e0b");
-  const [backupText, setBackupText] = useState("");
-  const [userName, setUserName] = useState("Cristhian");
-  const [userBio, setUserBio] = useState("Enfocado en crecer cada día 💪");
-
-  // Estadísticas
-  const stats = getGlobalStats();
-
-  useEffect(() => {
-    // Mantener el input sincronizado si cambia desde otra parte de la app
-    setAccent(storedAccent || "#f59e0b");
-  }, [storedAccent]);
-
-  // Toggle theme: alterna entre light/dark (no toca 'system')
-  const toggleTheme = () => {
-    const newTheme = isDark ? "light" : "dark";
-    setTheme(newTheme);
-    // NO usar Appearance.setColorScheme(...) — no es recomendable ni necesario aquí.
-  };
-
-  // Validación HEX simple (#RGB or #RRGGBB)
-  const isValidHex = (h: string) => /^#([0-9A-F]{3}){1,2}$/i.test(h);
-
-  const handleSetAccent = () => {
-    if (!isValidHex(accent))
-      return Alert.alert(
-        "Color inválido",
-        "Ingresa un HEX válido (ej. #06b6d4)",
-      );
-    setAccentColor(accent);
-    Alert.alert("¡Listo!", "Color de acento actualizado");
-  };
-
-  const handleBackup = () => {
-    try {
-      const json = backupToJSON();
-      setBackupText(json);
-      Alert.alert("Backup creado", "JSON listo abajo para copiar.");
-    } catch (e) {
-      Alert.alert("Error", "No se pudo generar backup");
-    }
-  };
-
-  const handleRestore = () => {
-    if (!backupText) return Alert.alert("Restaurar", "Pega el JSON primero.");
-    try {
-      restoreFromJSON(backupText);
-      Alert.alert("Restaurado", "Datos cargados correctamente");
-    } catch (e) {
-      Alert.alert("Error", "JSON inválido");
-    }
-  };
-
-  const confirmReset = () => {
-    Alert.alert("Resetear app", "¿Borrar todo? (metas, rachas, ajustes)", [
-      { text: "Cancelar" },
-      {
-        text: "Resetear",
-        style: "destructive",
-        onPress: () => {
-          resetAll();
-          Alert.alert("Hecho", "App reseteada");
-        },
-      },
-    ]);
-  };
-
-  const initials = userName
-    .split(" ")
-    .map((n) => (n ? n[0] : ""))
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  // Colores derivados (fallbacks seguros)
-  const bg = colors.background ?? (isDark ? "#0b1220" : "#f9fafb");
-  const card = colors.card ?? (isDark ? "#1f2937" : "#ffffff");
-  const text = colors.text ?? (isDark ? "#f3f4f6" : "#111827");
-  const subtext = colors.border ?? (isDark ? "#9ca3af" : "#6b7280");
-  const border = colors.border ?? (isDark ? "#374151" : "#e5e7eb");
-  const accentColor = storedAccent || "#f59e0b";
-
+  const { bg, card, text, subtext, border, accentColor } = colors;
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -478,3 +393,4 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 });
+

@@ -1,7 +1,9 @@
 import { Check, CheckCircle2 } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 import { getTodayKey } from "../store/ItineraryUtils";
+import { getGoalStepsForDate } from "../store/goalScheduleUtils";
 import useGoalsStore from "../store/useGoalsStore";
 
 type Props = {
@@ -10,10 +12,16 @@ type Props = {
 
 export default function CompleteTodayButton({ goalId }: Props) {
   const areAllStepsCompleted = useGoalsStore((s) => s.areAllStepsCompleted);
+  const getGoalById = useGoalsStore((s) => s.getGoalById);
   const markGoalCompletedToday = useGoalsStore((s) => s.markGoalCompletedToday);
 
-  const canComplete = areAllStepsCompleted(goalId);
   const todayKey = getTodayKey();
+  const goal = getGoalById(goalId);
+  const todaySteps = goal ? getGoalStepsForDate(goal, todayKey) : [];
+  const canComplete =
+    todaySteps.length > 0
+      ? todaySteps.every((step) => step.completed)
+      : areAllStepsCompleted(goalId);
 
   // Verificamos si YA está marcada hoy (para cambiar el estilo visual)
   const completedToday = useGoalsStore((s) => {

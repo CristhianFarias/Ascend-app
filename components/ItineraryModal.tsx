@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React from "react";
 import {
-  Alert,
   LayoutAnimation,
   Platform,
   ScrollView,
@@ -12,8 +11,8 @@ import {
   UIManager,
   View,
 } from "react-native";
-import { getTodayKey } from "../store/ItineraryUtils";
-import useGoalsStore, { ScheduleBlock } from "../store/useGoalsStore";
+
+import { useItineraryModalViewModel } from "../hooks/useItineraryModalViewModel";
 
 // Habilitar animaciones en Android
 if (
@@ -30,35 +29,13 @@ interface Props {
 export default function ItineraryModal({ onClose }: Props) {
   const {
     settings,
-    generateScheduleProposal,
-    setDailyScheduleForDate,
     externalEvents,
-    updateSettings,
-  } = useGoalsStore();
-
-  const [expanded, setExpanded] = useState<string | null>("itinerary");
-  const [tempSchedule, setTempSchedule] = useState<ScheduleBlock[]>([]);
-  const todayKey = getTodayKey();
-
-  const toggleSection = (section: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(expanded === section ? null : section);
-  };
-
-  const handleAutoOrganize = () => {
-    const { proposal, warnings } = generateScheduleProposal(todayKey);
-    setTempSchedule(proposal);
-    if (warnings.length > 0) {
-      Alert.alert("Aviso de Conflictos", warnings.join("\n"));
-    }
-  };
-
-  const saveAndClose = () => {
-    if (tempSchedule.length > 0) {
-      setDailyScheduleForDate(todayKey, tempSchedule);
-    }
-    onClose();
-  };
+    expanded,
+    tempSchedule,
+    toggleSection,
+    handleAutoOrganize,
+    saveAndClose,
+  } = useItineraryModalViewModel(onClose);
 
   return (
     <View style={styles.fullScreen}>
@@ -103,7 +80,6 @@ export default function ItineraryModal({ onClose }: Props) {
                 <TextInput
                   style={styles.timeInput}
                   value={settings.dayEndTime}
-                  onChangeText={(v) => updateSettings({ dayEndTime: v })}
                   placeholder="22:00"
                 />
               </View>

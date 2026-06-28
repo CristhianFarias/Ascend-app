@@ -1,9 +1,26 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Mountain, Target, User } from "lucide-react-native";
 import React from "react";
+import { View } from "react-native";
+import { useStoreHydration } from "../../hooks/useStoreHydration";
+import useGoalsStore from "../../store/useGoalsStore";
 
 export default function TabLayout() {
+  const hasHydrated = useStoreHydration();
+  const hasFinishedOnboarding = useGoalsStore(
+    (s) => s.hasFinishedOnboarding,
+  );
+
+  if (!hasHydrated) {
+    return <View style={{ flex: 1, backgroundColor: "#020617" }} />;
+  }
+
+  if (!hasFinishedOnboarding) {
+    // Protege las pantallas principales si el usuario aún no completó la bienvenida.
+    return <Redirect href="/onboarding" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

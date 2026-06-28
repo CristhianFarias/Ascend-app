@@ -1,8 +1,7 @@
 // src/components/SmartGoalCreator.tsx
 import { Feather } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,81 +12,28 @@ import {
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import useGoalsStore, {
-  GoalCategory,
+import {
+  CATEGORY_SUBCATEGORIES,
+  COLOR_PALETTE,
+  FITNESS_STYLES,
+  GOAL_CATEGORIES,
+  WORKOUT_ENVIRONMENTS,
+} from "./smartGoalCreatorOptions";
+import { useSmartGoalForm } from "../hooks/useSmartGoalForm";
+import {
+  GoalObjective,
   GoalPriority,
   GoalTemplate,
-  Step,
-  WorkoutEnvironment,
 } from "../store/useGoalsStore";
+import type {
+  PlanAvailability,
+  PlanLevel,
+} from "../store/personalPlanDesigner";
 
 type Props = {
   editId?: string | null;
   onClose: () => void;
 };
-
-// ==================== CONSTANTES GLOBALES ====================
-const CATEGORY_SUBCATEGORIES: Record<GoalCategory, string[]> = {
-  Fitness: [
-    "General",
-    "Casa",
-    "Gimnasio",
-    "Calistenia",
-    "Atletismo",
-    "Fuerza",
-    "Hipertrofia",
-    "Resistencia",
-    "Movilidad",
-  ],
-  Estudio: ["General", "Pomodoro", "Repaso", "Exámenes", "Lectura"],
-  Carrera: ["General", "Portafolio", "CV", "Entrevistas", "Postulaciones"],
-  Salud: ["General", "Sueño", "Nutrición", "Movimiento", "Autocuidado"],
-  Finanzas: ["General", "Presupuesto", "Ahorro", "Inversión", "Deudas"],
-  Otro: ["General", "Productividad", "Hábito", "Aprendizaje", "Orden"],
-};
-
-const FITNESS_STYLES = [
-  "General",
-  "Arnold Split",
-  "Heavy Duty",
-  "Full Body",
-  "Push Pull Legs",
-  "Torso Pierna",
-  "Upper Lower",
-  "Calistenia",
-  "Atletismo",
-  "Movilidad",
-  "Resistencia",
-];
-
-const WORKOUT_ENVIRONMENTS: WorkoutEnvironment[] = [
-  "Casa",
-  "Gimnasio",
-  "Mixto",
-];
-
-const COLOR_PALETTE = [
-  "#ef4444",
-  "#f97316",
-  "#f59e0b",
-  "#eab308",
-  "#84cc16",
-  "#22c55e",
-  "#10b981",
-  "#14b8a6",
-  "#06b6d4",
-  "#0ea5e9",
-  "#3b82f6",
-  "#6366f1",
-  "#8b5cf6",
-  "#a855f7",
-  "#d946ef",
-  "#ec4899",
-  "#f43f5e",
-  "#64748b",
-  "#111827",
-  "#6b7280",
-];
 
 const styles = StyleSheet.create({
   styleBox: { width: 220, padding: 18, justifyContent: "space-between" },
@@ -346,291 +292,90 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
+  assistantCard: {
+    marginBottom: 24,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: "#eef2ff",
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
+  },
+  assistantHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  assistantTitle: { fontSize: 17, fontWeight: "900", color: "#111827" },
+  assistantText: { marginTop: 8, color: "#4b5563", fontWeight: "600" },
+  assistantAction: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: "#111827",
+    alignItems: "center",
+  },
+  assistantActionText: { color: "#fff", fontWeight: "800" },
+  advisorNote: { color: "#4338ca", fontWeight: "700", marginTop: 6 },
 });
 
 export default function SmartGoalCreator({ editId, onClose }: Props) {
-  const tempIdCounter = useRef(0);
-
   const {
-    addGoalSafe,
-    createGoalFromTemplate,
-    updateGoal,
-    deleteGoal,
-    getGoalById,
-    getTemplatesByCategory,
+    accentColor,
+    title,
+    setTitle,
+    description,
+    setDescription,
+    category,
+    setCategory,
+    subCategory,
+    setSubCategory,
+    workoutEnvironment,
+    setWorkoutEnvironment,
+    workoutStyle,
+    setWorkoutStyle,
+    priority,
+    setPriority,
+    deadline,
+    setDeadline,
+    color,
+    setColor,
+    setCustomColor,
+    icon,
+    steps,
+    plan,
+    selectedTemplateId,
+    setSelectedTemplateId,
+    showDatePicker,
+    setShowDatePicker,
+    isFitness,
+    visibleTemplates,
+    creatorMode,
+    setCreatorMode,
+    primaryObjective,
+    setPrimaryObjective,
+    secondaryObjectives,
+    toggleSecondaryObjective,
+    planAvailability,
+    setPlanAvailability,
+    planLevel,
+    setPlanLevel,
+    planNotes,
+    categoryObjectives,
+    objectiveLabels,
+    frequencyPerWeek,
     getCategoryMeta,
-    settings,
-  } = useGoalsStore();
-
-  const accentColor = settings.accentColor || "#f59e0b";
-
-  // ==================== ESTADOS ====================
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<GoalCategory>("Otro");
-  const [subCategory, setSubCategory] = useState<string>("General");
-  const [workoutEnvironment, setWorkoutEnvironment] =
-    useState<WorkoutEnvironment>("Mixto");
-  const [workoutStyle, setWorkoutStyle] = useState<string>("General");
-  const [priority, setPriority] = useState<GoalPriority>("2");
-  const [deadline, setDeadline] = useState<string | undefined>(undefined);
-  const [color, setColor] = useState<string>("#6b7280");
-  const [customColor, setCustomColor] = useState(false);
-  const [icon, setIcon] = useState<string>("target");
-  const [steps, setSteps] = useState<Step[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null,
-  );
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // ==================== COMPUTADOS ====================
-  const isFitness = category === "Fitness";
-
-  const templatesByCategory = getTemplatesByCategory(category);
-
-  const visibleTemplates = templatesByCategory.filter((tmpl) => {
-    const tmplTyped = tmpl as GoalTemplate;
-    const tmplSub = tmplTyped.subCategory ?? "General";
-    const tmplStyle = tmplTyped.workoutStyle ?? "General";
-    const tmplEnv = tmplTyped.workoutEnvironment ?? "Mixto";
-
-    const matchesSubCategory =
-      subCategory === "General" || tmplSub === subCategory;
-
-    if (isFitness) {
-      const matchesStyle =
-        workoutStyle === "General" || tmplStyle === workoutStyle;
-      const matchesEnvironment =
-        workoutEnvironment === "Mixto" ||
-        tmplEnv === workoutEnvironment ||
-        !tmplEnv;
-
-      return matchesSubCategory && matchesStyle && matchesEnvironment;
-    }
-
-    return matchesSubCategory;
-  });
-
-  // ==================== EFECTOS ====================
-  useEffect(() => {
-    const meta = getCategoryMeta(category);
-    setIcon(meta.icon);
-    setSubCategory("General");
-    setWorkoutEnvironment("Mixto");
-    setWorkoutStyle("General");
-
-    if (!customColor) {
-      setColor(meta.color);
-    }
-  }, [category, customColor, getCategoryMeta]);
-
-  useEffect(() => {
-    tempIdCounter.current = 0;
-
-    if (editId) {
-      const g = getGoalById(editId);
-      if (g) {
-        setTitle(g.title);
-        setDescription(g.description ?? "");
-        setCategory(g.category);
-        setPriority(g.priority);
-        setDeadline(g.deadline ?? undefined);
-        setColor(g.color);
-        setIcon(g.icon ?? "target");
-        setSteps(g.steps);
-        setSelectedTemplateId(g.templateId ?? null);
-        setSubCategory((g as GoalTemplate).subCategory ?? "General");
-        setWorkoutEnvironment(
-          (g as GoalTemplate).workoutEnvironment ?? "Mixto",
-        );
-        setWorkoutStyle((g as GoalTemplate).workoutStyle ?? "General");
-      }
-    } else {
-      // reset
-      setTitle("");
-      setDescription("");
-      setCategory("Otro");
-      setPriority("2");
-      setDeadline(undefined);
-      const meta = getCategoryMeta("Otro");
-      setColor(meta.color);
-      setIcon(meta.icon);
-      setSteps([]);
-      setSelectedTemplateId(null);
-      setSubCategory("General");
-      setWorkoutEnvironment("Mixto");
-      setWorkoutStyle("General");
-    }
-  }, [editId, getGoalById, getCategoryMeta]);
-
-  // ==================== FUNCIONES ====================
-  const buildStepsFromSessions = (sessions: any[] = []): Step[] => {
-    const builtSteps: Step[] = [];
-    sessions.forEach((session) => {
-      session.exercises.forEach((ex: any) => {
-        builtSteps.push({
-          id: `temp-${tempIdCounter.current++}`,
-          title: ex.name ?? "Paso",
-          duration: ex.duration ?? 10,
-          completed: false,
-          order: builtSteps.length + 1,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest: ex.rest,
-          session: session.name,
-        });
-      });
-    });
-    return builtSteps;
-  };
-
-  const applyTemplate = (tmplId: string) => {
-    const tmpl = useGoalsStore
-      .getState()
-      .templates.find((t) => t.id === tmplId);
-    if (!tmpl) return;
-
-    const env = isFitness ? workoutEnvironment : undefined;
-    const tmplTyped = tmpl as GoalTemplate;
-    const chosenPlan = isFitness
-      ? (tmplTyped.environmentPlans?.[env as WorkoutEnvironment] ??
-        tmplTyped.environmentPlans?.Mixto ??
-        tmplTyped.defaultPlan ??
-        [])
-      : (tmplTyped.defaultPlan ?? []);
-
-    setSelectedTemplateId(tmplId);
-    setCategory(tmpl.category);
-    setSubCategory((tmpl as GoalTemplate).subCategory ?? "General");
-    setWorkoutEnvironment((tmpl as GoalTemplate).workoutEnvironment ?? "Mixto");
-    setWorkoutStyle((tmpl as GoalTemplate).workoutStyle ?? "General");
-    setTitle(tmpl.name ?? "");
-    setDescription(tmpl.description ?? "");
-
-    setSteps(buildStepsFromSessions(chosenPlan));
-  };
-
-  const refreshCurrentTemplate = () => {
-    if (!selectedTemplateId) {
-      Alert.alert("Sin plantilla", "Primero selecciona una plantilla.");
-      return;
-    }
-
-    const tmpl = useGoalsStore
-      .getState()
-      .templates.find((t) => t.id === selectedTemplateId);
-    if (!tmpl) {
-      Alert.alert("Plantilla no encontrada");
-      return;
-    }
-
-    const tmplTyped = tmpl as GoalTemplate;
-    const chosenPlan = isFitness
-      ? (tmplTyped.environmentPlans?.[
-          workoutEnvironment as WorkoutEnvironment
-        ] ??
-        tmplTyped.environmentPlans?.Mixto ??
-        tmplTyped.defaultPlan ??
-        [])
-      : (tmplTyped.defaultPlan ?? []);
-
-    setSteps(buildStepsFromSessions(chosenPlan));
-
-    Alert.alert(
-      "Plantilla actualizada",
-      "Se reaplicó con tu selección actual.",
-    );
-  };
-
-  const addStep = () => {
-    setSteps((prev) => [
-      ...prev,
-      {
-        id: `temp-${tempIdCounter.current++}`,
-        title: "Nuevo paso",
-        duration: 10,
-        completed: false,
-        order: prev.length + 1,
-      },
-    ]);
-  };
-
-  const updateLocalStep = (stepId: string, patch: Partial<Step>) => {
-    setSteps((prev) =>
-      prev.map((s) => (s.id === stepId ? { ...s, ...patch } : s)),
-    );
-  };
-
-  const removeLocalStep = (stepId: string) => {
-    setSteps((prev) =>
-      prev
-        .filter((s) => s.id !== stepId)
-        .map((s, i) => ({ ...s, order: i + 1 })),
-    );
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) {
-      Alert.alert("Error", "El título es obligatorio");
-      return;
-    }
-
-    const stepsForSave = editId
-      ? steps
-      : steps.map(({ id, ...rest }) => rest as Step);
-
-    const payload = {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      category,
-      priority,
-      deadline,
-      color,
-      icon,
-      templateId: selectedTemplateId ?? undefined,
-      steps: stepsForSave,
-      subCategory,
-      workoutEnvironment: isFitness ? workoutEnvironment : undefined,
-      workoutStyle: isFitness ? workoutStyle : undefined,
-    };
-
-    if (editId) {
-      updateGoal(editId, payload);
-    } else {
-      if (selectedTemplateId) {
-        createGoalFromTemplate(selectedTemplateId, payload);
-      } else {
-        addGoalSafe(payload);
-      }
-    }
-
-    onClose();
-  };
-
-  const handleDelete = () => {
-    if (!editId) return;
-    Alert.alert("Eliminar meta", "¿Estás seguro?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: () => {
-          deleteGoal(editId);
-          onClose();
-        },
-      },
-    ]);
-  };
-
-  const onConfirmDate = (date: Date) => {
-    setDeadline(
-      `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-        date.getDate(),
-      ).padStart(2, "0")}`,
-    );
-    setShowDatePicker(false);
-  };
-
+    applyTemplate,
+    applyPersonalPlan,
+    refreshCurrentTemplate,
+    addStep,
+    updateLocalStep,
+    removeLocalStep,
+    handleSave,
+    handleDelete,
+    onConfirmDate,
+    resetCategoryColor,
+  } = useSmartGoalForm({ editId, onClose });
   // ==================== RENDER ====================
   return (
     <SafeAreaView style={styles.container}>
@@ -644,6 +389,47 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Modo de creación: separa control manual/plantillas del asistente guiado. */}
+        {!editId && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Forma de creación</Text>
+            <View style={styles.row}>
+              <TouchableOpacity
+                onPress={() => setCreatorMode("design")}
+                style={[
+                  styles.chip,
+                  creatorMode === "design" && styles.chipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    creatorMode === "design" && styles.chipTextActive,
+                  ]}
+                >
+                  Diseñar plan
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setCreatorMode("assistant")}
+                style={[
+                  styles.chip,
+                  creatorMode === "assistant" && styles.chipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    creatorMode === "assistant" && styles.chipTextActive,
+                  ]}
+                >
+                  Asistente
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Título */}
         <View style={styles.section}>
           <Text style={styles.label}>Título de la meta</Text>
@@ -673,20 +459,14 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
         <View style={styles.section}>
           <Text style={styles.label}>Categoría</Text>
           <View style={styles.row}>
-            {(
-              [
-                "Fitness",
-                "Estudio",
-                "Carrera",
-                "Salud",
-                "Finanzas",
-                "Otro",
-              ] as GoalCategory[]
-            ).map((cat) => (
+            {GOAL_CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat}
                 onPress={() => {
                   setCategory(cat);
+                  setSubCategory("General");
+                  setWorkoutEnvironment("Mixto");
+                  setWorkoutStyle("General");
                   setSelectedTemplateId(null);
                 }}
                 style={[styles.chip, category === cat && styles.chipActive]}
@@ -709,7 +489,66 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
           </View>
         </View>
 
+        {/* Objetivos combinables del plan personal. */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Objetivo principal</Text>
+          <View style={styles.row}>
+            {categoryObjectives.map((objective: GoalObjective) => (
+              <TouchableOpacity
+                key={objective}
+                onPress={() => {
+                  setPrimaryObjective(objective);
+                  if (secondaryObjectives.includes(objective)) {
+                    toggleSecondaryObjective(objective);
+                  }
+                }}
+                style={[
+                  styles.chip,
+                  primaryObjective === objective && styles.chipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    primaryObjective === objective && styles.chipTextActive,
+                  ]}
+                >
+                  {objectiveLabels[objective]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={[styles.label, { marginTop: 16 }]}>
+            Objetivos secundarios
+          </Text>
+          <View style={styles.row}>
+            {categoryObjectives
+              .filter((objective: GoalObjective) => objective !== primaryObjective)
+              .map((objective: GoalObjective) => {
+                const active = secondaryObjectives.includes(objective);
+                return (
+                  <TouchableOpacity
+                    key={objective}
+                    onPress={() => toggleSecondaryObjective(objective)}
+                    style={[styles.chip, active && styles.chipActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        active && styles.chipTextActive,
+                      ]}
+                    >
+                      {objectiveLabels[objective]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+          </View>
+        </View>
+
         {/* Subcategoría */}
+        {creatorMode === "design" && (
         <View style={styles.section}>
           <Text style={styles.label}>Subcategoría</Text>
           <View style={styles.row}>
@@ -731,9 +570,10 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
             ))}
           </View>
         </View>
+        )}
 
         {/* Fitness: Entorno + Estilo */}
-        {isFitness && (
+        {creatorMode === "design" && isFitness && (
           <View style={styles.section}>
             <Text style={styles.label}>Entorno de entrenamiento</Text>
             <View style={styles.row}>
@@ -798,6 +638,7 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
         )}
 
         {/* Plantillas rápidas */}
+        {creatorMode === "design" && (
         <View style={styles.section}>
           <Text style={styles.label}>Plantillas rápidas</Text>
 
@@ -835,6 +676,7 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
             </View>
           )}
         </View>
+        )}
 
         {/* Prioridad */}
         <View style={styles.section}>
@@ -885,6 +727,100 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
           )}
         </View>
 
+        {/* Asistente guiado: usa plantillas y reglas locales, sin IA externa. */}
+        {!editId && creatorMode === "assistant" && (
+          <View style={styles.assistantCard}>
+            <View style={styles.assistantHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.assistantTitle}>
+                  Asistente de plan personal
+                </Text>
+                <Text style={styles.assistantText}>
+                  Combina objetivo, nivel y disponibilidad para crear una base editable.
+                </Text>
+              </View>
+            </View>
+
+            <Text style={[styles.label, { marginTop: 16 }]}>
+              Disponibilidad
+            </Text>
+            <View style={styles.row}>
+              {(
+                [
+                  ["light", "Ligera"],
+                  ["normal", "Normal"],
+                  ["intense", "Intensa"],
+                ] as [PlanAvailability, string][]
+              ).map(([value, label]) => (
+                <TouchableOpacity
+                  key={value}
+                  onPress={() => setPlanAvailability(value)}
+                  style={[
+                    styles.chip,
+                    planAvailability === value && styles.chipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      planAvailability === value && styles.chipTextActive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 16 }]}>Nivel</Text>
+            <View style={styles.row}>
+              {(
+                [
+                  ["beginner", "Inicial"],
+                  ["intermediate", "Intermedio"],
+                  ["advanced", "Avanzado"],
+                ] as [PlanLevel, string][]
+              ).map(([value, label]) => (
+                <TouchableOpacity
+                  key={value}
+                  onPress={() => setPlanLevel(value)}
+                  style={[
+                    styles.chip,
+                    planLevel === value && styles.chipActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      planLevel === value && styles.chipTextActive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={applyPersonalPlan}
+              style={styles.assistantAction}
+            >
+              <Text style={styles.assistantActionText}>Generar plan editable</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {planNotes.length > 0 && (
+          <View style={styles.assistantCard}>
+            <Text style={styles.assistantTitle}>Propuesta aplicada</Text>
+            {planNotes.map((note) => (
+              <Text key={note} style={styles.advisorNote}>
+                {note}
+              </Text>
+            ))}
+          </View>
+        )}
+
         {/* Vista previa + Color */}
         <View style={styles.section}>
           <Text style={styles.label}>Vista previa</Text>
@@ -926,11 +862,7 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
           </View>
 
           <TouchableOpacity
-            onPress={() => {
-              const meta = getCategoryMeta(category);
-              setColor(meta.color);
-              setCustomColor(false);
-            }}
+            onPress={resetCategoryColor}
             style={styles.resetColorBtn}
           >
             <Text style={styles.resetColorText}>
@@ -1042,10 +974,16 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
             </View>
             <View style={styles.fitnessSummaryRow}>
               <Text style={styles.fitnessSummaryLabel}>
-                Plantillas visibles
+                Sesiones del plan
               </Text>
               <Text style={styles.fitnessSummaryValue}>
-                {visibleTemplates.length}
+                {plan.length}
+              </Text>
+            </View>
+            <View style={styles.fitnessSummaryRow}>
+              <Text style={styles.fitnessSummaryLabel}>Frecuencia</Text>
+              <Text style={styles.fitnessSummaryValue}>
+                {frequencyPerWeek}x/semana
               </Text>
             </View>
           </View>
@@ -1081,3 +1019,6 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
     </SafeAreaView>
   );
 }
+
+
+

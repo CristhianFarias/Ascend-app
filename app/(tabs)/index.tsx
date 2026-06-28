@@ -1,8 +1,5 @@
-import { useTheme } from "@react-navigation/native";
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React from "react";
 import {
-  Alert,
-  AppState,
   FlatList,
   Modal,
   Platform,
@@ -17,32 +14,13 @@ import {
 import DraggableFlatList, {
   RenderItemParams,
 } from "react-native-draggable-flatlist";
-import { getTodayKey, timeStrToMinutes } from "../../store/ItineraryUtils";
-import useGoalsStore, {
+import { timeStrToMinutes } from "../../store/ItineraryUtils";
+import { useIndexViewModel } from "../../hooks/useIndexViewModel";
+import type {
   Goal,
   ScheduleBlock,
   Step,
-  TimeBlock,
 } from "../../store/useGoalsStore";
-
-/* ============================
-   Citas
-   ============================ */
-const QUOTES: { q: string; a: string }[] = [
-  { q: "La disciplina es el puente entre metas y logros.", a: "Jim Rohn" },
-  {
-    q: "Somos lo que hacemos repetidamente. La excelencia, entonces, no es un acto, sino un hábito.",
-    a: "Aristóteles",
-  },
-  {
-    q: "No es porque las cosas sean difíciles que no nos atrevemos; es porque no nos atrevemos que son difíciles.",
-    a: "Séneca",
-  },
-  {
-    q: "La acción es la clave fundamental para todo éxito.",
-    a: "Pablo Picasso",
-  },
-];
 
 /* ============================
    Sub-componentes (Extraídos para evitar remounts)
@@ -210,225 +188,44 @@ const BlockRow = ({
    Pantalla Index
    ============================ */
 export default function IndexScreen(): React.ReactElement {
-  const todayKey = getTodayKey();
+  const {
+    editMode,
+    setEditMode,
+    setEditableSchedule,
+    dataToRender,
+    franjasModalVisible,
+    setFranjasModalVisible,
+    localTimeBlocks,
+    blockEditorVisible,
+    setBlockEditorVisible,
+    blockDraft,
+    setBlockDraft,
+    quote,
+    stats,
+    summary,
+    nextItem,
+    getExpandedStepsForBlock,
+    getGoalsList,
+    toggleStep,
+    startFocus,
+    addTimeBlockLocal,
+    updateTimeBlockLocal,
+    removeTimeBlockLocal,
+    saveFranjas,
+    openBlockEditor,
+    saveBlockDraft,
+    deleteBlock,
+    saveEditedSchedule,
+    cancelEditedSchedule,
+    applyScheduleProposal,
+    markTodayStrict,
+    markTodayFromFooter,
+    startNextFocus,
+    colors,
+    dark,
+  } = useIndexViewModel();
 
-  const performDailyRollover = useGoalsStore((s) => s.performDailyRollover);
-  const generateScheduleProposal = useGoalsStore(
-    (s) => s.generateScheduleProposal,
-  );
-  const reorderMergedScheduleForDate = useGoalsStore(
-    (s) => s.reorderMergedScheduleForDate,
-  );
-  const getExpandedStepsForBlock = useGoalsStore(
-    (s) => s.getExpandedStepsForBlock,
-  );
-  const getGoalsList = useGoalsStore((s) => s.getGoalsList);
-  const toggleStep = useGoalsStore((s) => s.toggleStep);
-  const startFocus = useGoalsStore((s) => s.startFocus);
-  const setDailyScheduleForDate = useGoalsStore(
-    (s) => s.setDailyScheduleForDate,
-  );
-  const setAvailableTimeBlocks = useGoalsStore((s) => s.setAvailableTimeBlocks);
-  const markTodayCompleteIfEligible = useGoalsStore(
-    (s) => s.markTodayCompleteIfEligible,
-  );
-  const stats = useGoalsStore((s) => s.getGlobalStats());
-  const summary = useGoalsStore((s) => s.getTodayItinerarySummary());
-  const nextItem = useGoalsStore((s) => s.findNextItineraryItem());
-  const storedAccent = useGoalsStore((s) => s.settings.accentColor);
-  const availableTimeBlocks = useGoalsStore(
-    (s) => s.settings.availableTimeBlocks ?? [],
-  );
-  const dailyScheduleFromStore = useGoalsStore((s) =>
-    s.getMergedScheduleForDate(todayKey),
-  );
-
-  /* THEME */
-  const { colors, dark } = useTheme();
-  const bg = colors?.background ?? (dark ? "#0b1220" : "#fff");
-  const card = colors?.card ?? (dark ? "#1f2937" : "#fff");
-  const text = colors?.text ?? (dark ? "#f3f4f6" : "#0f172a");
-  const subtext = colors?.border ?? (dark ? "#9ca3af" : "#6b7280");
-  const border = colors?.border ?? (dark ? "#374151" : "#e5e7eb");
-  const primary = colors?.primary ?? storedAccent ?? "#111";
-
-  /* estado UI local */
-  const [editMode, setEditMode] = useState<boolean>(false);
-  const [editableSchedule, setEditableSchedule] = useState<ScheduleBlock[]>(
-    () => dailyScheduleFromStore ?? [],
-  );
-  const [franjasModalVisible, setFranjasModalVisible] = useState(false);
-  const [localTimeBlocks, setLocalTimeBlocks] = useState<TimeBlock[]>(
-    () => availableTimeBlocks ?? [],
-  );
-  const [blockEditorVisible, setBlockEditorVisible] = useState(false);
-  const [blockDraft, setBlockDraft] = useState<ScheduleBlock | null>(null);
-
-  const quote = useMemo(
-    () => QUOTES[Math.floor(Math.random() * QUOTES.length)],
-    [],
-  );
-
-  /* sincronizar store -> local cuando no estemos en edición */
-  useEffect(() => {
-    if (!editMode) setEditableSchedule(dailyScheduleFromStore ?? []);
-  }, [dailyScheduleFromStore, editMode]);
-
-  useEffect(() => {
-    setLocalTimeBlocks(availableTimeBlocks ?? []);
-  }, [availableTimeBlocks]);
-
-  /* rollover diario al montar y al volver al foreground */
-  useEffect(() => {
-    try {
-      performDailyRollover();
-    } catch (e) {
-      console.warn("performDailyRollover error", e);
-    }
-
-    const handler = (nextState: string) => {
-      if (nextState === "active") {
-        try {
-          const res = performDailyRollover();
-          if (res?.rolled && res?.archivedGoals?.length) {
-            Alert.alert(
-              "Algunas metas fueron archivadas",
-              `${res.archivedGoals.length} metas con deadline pasado fueron archivadas.`,
-            );
-          }
-        } catch (e) {
-          console.warn("performDailyRollover on active error", e);
-        }
-      }
-    };
-
-    const subscription = AppState.addEventListener
-      ? AppState.addEventListener("change", handler)
-      : undefined;
-
-    return () => {
-      if (subscription && typeof (subscription as any).remove === "function") {
-        (subscription as any).remove();
-        return;
-      }
-      try {
-        const anyAppState = AppState as any;
-        if (typeof anyAppState.removeEventListener === "function") {
-          anyAppState.removeEventListener("change", handler);
-        }
-      } catch {
-        // noop
-      }
-    };
-  }, [performDailyRollover]);
-
-  /* escuchar rollover del store */
-  useEffect(() => {
-    const cb = () => {
-      if (editMode) {
-        setEditMode(false);
-        Alert.alert(
-          "Se inició un nuevo día",
-          "Se saldrá del modo edición para aplicar los cambios del día.",
-        );
-      }
-      const ds = useGoalsStore
-        .getState()
-        .getMergedScheduleForDate(getTodayKey());
-      setEditableSchedule(ds ?? []);
-    };
-
-    useGoalsStore.getState().on("daily.rollover", cb);
-    return () => {
-      useGoalsStore.getState().off("daily.rollover", cb);
-    };
-  }, [editMode]);
-
-  /* ============================
-     Franjas (UI only)
-     ============================ */
-  const addTimeBlockLocal = () =>
-    setLocalTimeBlocks((s) => [...(s ?? []), { start: "08:00", end: "09:00" }]);
-
-  const updateTimeBlockLocal = (
-    index: number,
-    key: "start" | "end",
-    value: string,
-  ) =>
-    setLocalTimeBlocks((s) =>
-      (s ?? []).map((b, i) => (i === index ? { ...b, [key]: value } : b)),
-    );
-
-  const removeTimeBlockLocal = (index: number) =>
-    setLocalTimeBlocks((s) => (s ?? []).filter((_, i) => i !== index));
-
-  const saveFranjas = (applyProposal = false) => {
-    const cleaned: TimeBlock[] = (localTimeBlocks ?? [])
-      .map((b) => ({ start: b.start.slice(0, 5), end: b.end.slice(0, 5) }))
-      .filter((b) => timeStrToMinutes(b.end) > timeStrToMinutes(b.start));
-
-    if (cleaned.length === 0) {
-      Alert.alert("Franjas inválidas", "Agrega al menos una franja válida.");
-      return;
-    }
-
-    setAvailableTimeBlocks(cleaned);
-    setLocalTimeBlocks(cleaned);
-    setFranjasModalVisible(false);
-
-    if (applyProposal) {
-      const { proposal, warnings } = generateScheduleProposal(todayKey);
-      setDailyScheduleForDate(todayKey, proposal);
-      setEditableSchedule(proposal);
-
-      if (warnings && warnings.length) {
-        Alert.alert("Advertencias", warnings.join("\n"));
-      } else {
-        Alert.alert("Itinerario generado", "Se aplicó la propuesta a tu día.");
-      }
-    } else {
-      Alert.alert(
-        "Franjas guardadas",
-        "Se actualizaron tus franjas disponibles.",
-      );
-    }
-  };
-
-  /* ============================
-     Editor bloque
-     ============================ */
-  const openBlockEditor = (block: ScheduleBlock) => {
-    setBlockDraft({ ...block });
-    setBlockEditorVisible(true);
-  };
-
-  const applyBlockDraft = () => {
-    if (!blockDraft) return;
-    const newSched = editableSchedule.map((b) =>
-      b.id === blockDraft.id ? blockDraft : b,
-    );
-    setEditableSchedule(newSched);
-    setBlockEditorVisible(false);
-  };
-
-  const deleteBlock = (blockId: string) => {
-    const after = editableSchedule.filter((b) => b.id !== blockId);
-    setEditableSchedule(after);
-    setBlockEditorVisible(false);
-  };
-
-  const saveEditedSchedule = () => {
-    setDailyScheduleForDate(todayKey, editableSchedule ?? []);
-    setEditMode(false);
-    Alert.alert("Itinerario guardado", "El nuevo orden ha sido aplicado.");
-  };
-
-  const cancelEditedSchedule = () => {
-    setEditableSchedule(dailyScheduleFromStore ?? []);
-    setEditMode(false);
-    Alert.alert("Cancelado", "Se descartaron los cambios.");
-  };
-
+  const { bg, card, text, subtext, border, primary } = colors;
   /* ============================
      Header / Footer
      ============================ */
@@ -531,17 +328,7 @@ export default function IndexScreen(): React.ReactElement {
         </View>
 
         <TouchableOpacity
-          onPress={() => {
-            const ok = markTodayCompleteIfEligible();
-            if (ok) {
-              Alert.alert("¡Día marcado!", "La racha se actualizó.");
-            } else {
-              Alert.alert(
-                "Aún no",
-                "Completa todos los pasos de las metas activas para marcar el día.",
-              );
-            }
-          }}
+          onPress={markTodayStrict}
           style={[styles.streakBtn, { backgroundColor: primary }]}
         >
           <Text style={styles.streakBtnText}>Marcar hoy</Text>
@@ -577,17 +364,7 @@ export default function IndexScreen(): React.ReactElement {
         </View>
 
         <TouchableOpacity
-          onPress={() => {
-            if (!nextItem?.goalId) {
-              Alert.alert(
-                "Sin foco disponible",
-                "No hay un paso pendiente para iniciar Focus.",
-              );
-              return;
-            }
-
-            startFocus(nextItem.goalId, nextItem.stepId);
-          }}
+          onPress={startNextFocus}
           style={[
             styles.focusHeroBtn,
             { backgroundColor: nextItem?.goalId ? primary : border },
@@ -608,17 +385,7 @@ export default function IndexScreen(): React.ReactElement {
         }}
       >
         <TouchableOpacity
-          onPress={() => {
-            const { proposal, warnings } = generateScheduleProposal(todayKey);
-            setDailyScheduleForDate(todayKey, proposal);
-            setEditableSchedule(proposal);
-
-            if (warnings && warnings.length) {
-              Alert.alert("Advertencias", warnings.join("\n"));
-            } else {
-              Alert.alert("Itinerario guardado", "Propuesta aplicada.");
-            }
-          }}
+          onPress={applyScheduleProposal}
           style={[
             styles.primaryButton,
             { paddingHorizontal: 18, backgroundColor: primary },
@@ -643,17 +410,7 @@ export default function IndexScreen(): React.ReactElement {
 
       {!editMode && (
         <TouchableOpacity
-          onPress={() => {
-            const success = markTodayCompleteIfEligible();
-            if (!success) {
-              Alert.alert(
-                "Progreso insuficiente",
-                "Completa los pasos para marcar el día.",
-              );
-            } else {
-              Alert.alert("¡Día marcado!", "Racha actualizada.");
-            }
-          }}
+          onPress={markTodayFromFooter}
           style={[
             styles.primaryButton,
             { alignSelf: "stretch", backgroundColor: primary },
@@ -668,9 +425,6 @@ export default function IndexScreen(): React.ReactElement {
       )}
     </View>
   );
-
-  const dataToRender =
-    (editMode ? editableSchedule : dailyScheduleFromStore) ?? [];
 
   /* Render */
   return (
@@ -1004,20 +758,7 @@ export default function IndexScreen(): React.ReactElement {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => {
-                      if (blockDraft) {
-                        const nb: ScheduleBlock = {
-                          ...blockDraft,
-                          minutes: Math.max(
-                            0,
-                            timeStrToMinutes(blockDraft.end) -
-                              timeStrToMinutes(blockDraft.start),
-                          ),
-                        };
-                        setBlockDraft(nb);
-                        applyBlockDraft();
-                      }
-                    }}
+                    onPress={saveBlockDraft}
                     style={[styles.primaryButton, { backgroundColor: primary }]}
                   >
                     <Text style={styles.primaryButtonText}>Guardar</Text>
@@ -1301,3 +1042,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
