@@ -16,6 +16,7 @@ export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type PersonalPlanInput = {
   templates: GoalTemplate[];
   category: GoalCategory;
+  subCategory?: string;
   title?: string;
   deadline?: string;
   primaryObjective: GoalObjective;
@@ -71,8 +72,8 @@ const availabilityFrequency: Record<PlanAvailability, number> = {
 };
 
 const objectiveKeywords: Record<GoalObjective, string[]> = {
-  strength: ["fuerza", "heavy", "full body", "arnold"],
-  hypertrophy: ["hipertrofia", "arnold", "push pull", "torso"],
+  strength: ["fuerza", "heavy", "full body", "torso"],
+  hypertrophy: ["hipertrofia", "push pull", "torso", "volumen"],
   fatLoss: ["cardio", "resistencia", "movimiento"],
   endurance: ["cardio", "resistencia", "atletismo"],
   mobility: ["movilidad", "core", "autocuidado"],
@@ -113,6 +114,8 @@ const scoreTemplate = (
   input: PersonalPlanInput,
 ) => {
   let score = template.category === input.category ? 12 : -20;
+  const wantedSubCategory = input.subCategory ?? "General";
+  const templateSubCategory = template.subCategory ?? "General";
   const searchable = [
     template.name,
     template.description,
@@ -129,6 +132,13 @@ const scoreTemplate = (
     score += 4;
   }
 
+  // La subcategoría elegida por el usuario debe pesar bastante.
+  // Evita que una plantilla popular gane cuando se pidió movilidad, calistenia, examen, etc.
+  if (wantedSubCategory !== "General") {
+    if (templateSubCategory === wantedSubCategory) score += 14;
+    else score -= 10;
+  }
+
   objectiveKeywords[input.primaryObjective].forEach((word) => {
     if (searchable.includes(word)) score += 3;
   });
@@ -139,8 +149,9 @@ const scoreTemplate = (
     });
   });
 
-  if (input.workoutStyle !== "General" && template.workoutStyle === input.workoutStyle) {
-    score += 4;
+  if (input.workoutStyle !== "General") {
+    if (template.workoutStyle === input.workoutStyle) score += 10;
+    else if (template.category === "Fitness") score -= 6;
   }
 
   if (

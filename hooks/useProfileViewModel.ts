@@ -96,7 +96,7 @@ export const useProfileViewModel = () => {
   const bg = colors.background ?? (isDark ? "#0b1220" : "#f9fafb");
   const card = colors.card ?? (isDark ? "#1f2937" : "#ffffff");
   const text = colors.text ?? (isDark ? "#f3f4f6" : "#111827");
-  const subtext = colors.border ?? (isDark ? "#9ca3af" : "#6b7280");
+  const subtext = isDark ? "#cbd5e1" : "#475569";
   const border = colors.border ?? (isDark ? "#374151" : "#e5e7eb");
   const accentColor = storedAccent || "#f59e0b";
 

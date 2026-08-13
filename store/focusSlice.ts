@@ -1,4 +1,4 @@
-import type { FocusSession, Goal } from "./goalTypes";
+import type { FocusSession, Goal, Step } from "./goalTypes";
 import { emitEvent } from "./storeEvents";
 import type { GoalsState } from "./storeTypes";
 
@@ -10,6 +10,15 @@ type StoreSet = (
 ) => void;
 
 type StoreGet = () => GoalsState;
+
+const getWorkSecondsForStep = (step: Step) => {
+  const sets = Math.max(1, step.sets ?? 1);
+  const totalSeconds = Math.max(30, (step.duration || 1) * 60);
+
+  // En ejercicios con series, duration representa el bloque completo.
+  // Dividirlo evita timers enormes por cada set, especialmente en Fitness.
+  return Math.max(20, Math.round(totalSeconds / sets));
+};
 
 /**
  * Motor de Modo Focus.
@@ -34,7 +43,7 @@ export const createFocusSlice = (set: StoreSet, get: StoreGet) => ({
     const step = goal.steps[startIndex];
     const totalSets = Math.max(1, step.sets ?? 1);
     const restSeconds = Math.max(0, step.rest ?? 60);
-    const remainingSeconds = Math.max(1, opts?.seconds ?? step.duration * 60);
+    const remainingSeconds = Math.max(1, opts?.seconds ?? getWorkSecondsForStep(step));
     const now = Date.now();
 
     const session: FocusSession = {
@@ -152,7 +161,7 @@ export const createFocusSlice = (set: StoreSet, get: StoreGet) => ({
             localSession.phase = "work";
             localSession.remainingSeconds = Math.max(
               1,
-              (currentStep.duration || 1) * 60,
+              getWorkSecondsForStep(currentStep),
             );
           }
         } else {
@@ -185,7 +194,7 @@ export const createFocusSlice = (set: StoreSet, get: StoreGet) => ({
             localSession.restSeconds = Math.max(0, nextStep.rest ?? 60);
             localSession.remainingSeconds = Math.max(
               1,
-              (nextStep.duration || 1) * 60,
+              getWorkSecondsForStep(nextStep),
             );
           } else {
             const allDone = goal.steps.every((step) => step.completed);
@@ -210,7 +219,7 @@ export const createFocusSlice = (set: StoreSet, get: StoreGet) => ({
         const current = safeGetCurrentStep();
         localSession.remainingSeconds = Math.max(
           1,
-          (current?.duration ?? 1) * 60,
+          current ? getWorkSecondsForStep(current) : 60,
         );
       } else {
         localSession = null;

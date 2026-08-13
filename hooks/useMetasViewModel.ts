@@ -25,7 +25,7 @@ export const useMetasViewModel = () => {
   const bg = colors.background ?? (dark ? "#0b1220" : "#f9fafb");
   const card = colors.card ?? (dark ? "#1f2937" : "#ffffff");
   const text = colors.text ?? (dark ? "#f3f4f6" : "#111827");
-  const subtext = colors.border ?? (dark ? "#9ca3af" : "#6b7280");
+  const subtext = dark ? "#cbd5e1" : "#475569";
   const border = colors.border ?? (dark ? "#374151" : "#e5e7eb");
   const primary = colors.primary ?? settings.accentColor ?? "#111827";
   const accentColor = settings.accentColor || primary;

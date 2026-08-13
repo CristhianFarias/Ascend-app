@@ -1241,5 +1241,397 @@ export const DEFAULT_TEMPLATES: GoalTemplate[] = [
       },
     ],
   },
+  {
+    id: "est-idioma-rotativo",
+    name: "Idioma semanal rotativo",
+    category: "Estudio",
+    subCategory: "Lectura",
+    description: "Plan equilibrado para vocabulario, escucha, conversación y repaso.",
+    color: "#06b6d4",
+    icon: "book-open",
+    frequencyPerWeek: 5,
+    estimatedMinutes: 45,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["habit"],
+    secondaryObjectives: ["project"],
+    flexibilityTags: ["idioma", "vocabulario", "escucha", "conversación"],
+    defaultPlan: [
+      {
+        name: "Vocabulario",
+        exercises: [
+          { name: "Aprender 15 palabras", duration: 15 },
+          { name: "Crear frases propias", duration: 15 },
+          { name: "Repasar tarjetas", duration: 15 },
+        ],
+      },
+      {
+        name: "Escucha",
+        exercises: [
+          { name: "Escuchar audio corto", duration: 15 },
+          { name: "Anotar expresiones", duration: 15 },
+          { name: "Repetición en voz alta", duration: 10 },
+        ],
+      },
+      {
+        name: "Conversación",
+        exercises: [
+          { name: "Responder preguntas comunes", duration: 15 },
+          { name: "Grabar práctica oral", duration: 10 },
+          { name: "Corregir pronunciación", duration: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "est-proyecto-investigacion",
+    name: "Proyecto de investigación",
+    category: "Estudio",
+    subCategory: "Repaso",
+    description: "Estructura para investigar, sintetizar y entregar un tema complejo.",
+    color: "#06b6d4",
+    icon: "book-open",
+    frequencyPerWeek: 4,
+    estimatedMinutes: 70,
+    defaultPriority: "1",
+    defaultType: "Proyecto",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["project"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["investigación", "entrega", "síntesis", "proyecto"],
+    defaultPlan: [
+      {
+        name: "Investigación",
+        exercises: [
+          { name: "Buscar fuentes", duration: 20 },
+          { name: "Leer fuente principal", duration: 25 },
+          { name: "Guardar citas clave", duration: 10 },
+        ],
+      },
+      {
+        name: "Síntesis",
+        exercises: [
+          { name: "Mapa de ideas", duration: 20 },
+          { name: "Resumen propio", duration: 25 },
+          { name: "Lista de dudas", duration: 10 },
+        ],
+      },
+      {
+        name: "Entrega",
+        exercises: [
+          { name: "Redactar avance", duration: 30 },
+          { name: "Revisar claridad", duration: 15 },
+          { name: "Preparar siguiente bloque", duration: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "car-networking",
+    name: "Networking profesional",
+    category: "Carrera",
+    subCategory: "Postulaciones",
+    description: "Plan para crear contactos, conversaciones y oportunidades reales.",
+    color: "#f59e0b",
+    icon: "briefcase",
+    frequencyPerWeek: 3,
+    estimatedMinutes: 50,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["career"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["networking", "contactos", "oportunidades", "mensajes"],
+    defaultPlan: [
+      {
+        name: "Buscar contactos",
+        exercises: [
+          { name: "Identificar 5 perfiles", duration: 15 },
+          { name: "Guardar contexto de cada perfil", duration: 10 },
+        ],
+      },
+      {
+        name: "Contactar",
+        exercises: [
+          { name: "Enviar 2 mensajes personalizados", duration: 20 },
+          { name: "Registrar respuestas", duration: 10 },
+        ],
+      },
+      {
+        name: "Seguimiento",
+        exercises: [
+          { name: "Responder conversaciones abiertas", duration: 20 },
+          { name: "Actualizar oportunidades", duration: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "car-skill-upgrade",
+    name: "Mejora de habilidad profesional",
+    category: "Carrera",
+    subCategory: "General",
+    description: "Plan para aprender una habilidad útil y convertirla en evidencia profesional.",
+    color: "#f59e0b",
+    icon: "briefcase",
+    frequencyPerWeek: 4,
+    estimatedMinutes: 65,
+    defaultPriority: "1",
+    defaultType: "Proyecto",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["career"],
+    secondaryObjectives: ["project"],
+    flexibilityTags: ["habilidad", "curso", "práctica", "evidencia"],
+    defaultPlan: [
+      {
+        name: "Aprendizaje",
+        exercises: [
+          { name: "Ver clase o leer guía", duration: 25 },
+          { name: "Tomar notas aplicables", duration: 10 },
+        ],
+      },
+      {
+        name: "Práctica",
+        exercises: [
+          { name: "Ejercicio práctico", duration: 30 },
+          { name: "Corregir errores", duration: 15 },
+        ],
+      },
+      {
+        name: "Evidencia",
+        exercises: [
+          { name: "Documentar resultado", duration: 20 },
+          { name: "Publicar o guardar demo", duration: 15 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "sal-meditacion-estres",
+    name: "Manejo de estrés",
+    category: "Salud",
+    subCategory: "Autocuidado",
+    description: "Rutina suave para respiración, pausa mental y descarga emocional.",
+    color: "#10b981",
+    icon: "heart",
+    frequencyPerWeek: 5,
+    estimatedMinutes: 25,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["wellness"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["estrés", "meditación", "respiración", "calma"],
+    defaultPlan: [
+      {
+        name: "Respiración",
+        exercises: [
+          { name: "Respiración 4-7-8", duration: 6 },
+          { name: "Chequeo corporal", duration: 8 },
+        ],
+      },
+      {
+        name: "Descarga",
+        exercises: [
+          { name: "Escritura libre", duration: 10 },
+          { name: "Identificar tensión principal", duration: 5 },
+        ],
+      },
+      {
+        name: "Recuperación",
+        exercises: [
+          { name: "Paseo corto o pausa activa", duration: 12 },
+          { name: "Plan de descanso", duration: 5 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "sal-nutricion-semanal",
+    name: "Nutrición semanal simple",
+    category: "Salud",
+    subCategory: "Nutrición",
+    description: "Plan para organizar comidas, compras y registro sin complicarse.",
+    color: "#10b981",
+    icon: "heart",
+    frequencyPerWeek: 3,
+    estimatedMinutes: 45,
+    defaultPriority: "2",
+    defaultType: "Proyecto",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["wellness"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["nutrición", "comidas", "compras", "registro"],
+    defaultPlan: [
+      {
+        name: "Planear comidas",
+        exercises: [
+          { name: "Elegir comidas base", duration: 15 },
+          { name: "Definir proteína y vegetales", duration: 10 },
+        ],
+      },
+      {
+        name: "Preparar",
+        exercises: [
+          { name: "Lista de compras", duration: 10 },
+          { name: "Preparación simple", duration: 25 },
+        ],
+      },
+      {
+        name: "Revisar",
+        exercises: [
+          { name: "Registrar comidas", duration: 10 },
+          { name: "Ajustar siguiente semana", duration: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "fin-revision-semanal",
+    name: "Revisión financiera semanal",
+    category: "Finanzas",
+    subCategory: "Presupuesto",
+    description: "Control ligero para saber en qué va tu dinero cada semana.",
+    color: "#8b5cf6",
+    icon: "dollar-sign",
+    frequencyPerWeek: 2,
+    estimatedMinutes: 40,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["finance"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["presupuesto", "gastos", "revisión semanal"],
+    defaultPlan: [
+      {
+        name: "Registrar",
+        exercises: [
+          { name: "Anotar gastos recientes", duration: 15 },
+          { name: "Separar gastos fijos y variables", duration: 10 },
+        ],
+      },
+      {
+        name: "Decidir",
+        exercises: [
+          { name: "Comparar contra presupuesto", duration: 10 },
+          { name: "Elegir ajuste de la semana", duration: 10 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "fin-reto-ahorro",
+    name: "Reto de ahorro",
+    category: "Finanzas",
+    subCategory: "Ahorro",
+    description: "Sistema simple para ahorrar con seguimiento y pequeñas decisiones.",
+    color: "#8b5cf6",
+    icon: "dollar-sign",
+    frequencyPerWeek: 3,
+    estimatedMinutes: 30,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["finance"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["ahorro", "reto", "seguimiento", "constancia"],
+    defaultPlan: [
+      {
+        name: "Aportar",
+        exercises: [
+          { name: "Separar monto definido", duration: 5 },
+          { name: "Registrar aporte", duration: 5 },
+        ],
+      },
+      {
+        name: "Reducir gasto",
+        exercises: [
+          { name: "Detectar gasto evitable", duration: 10 },
+          { name: "Mover ahorro equivalente", duration: 5 },
+        ],
+      },
+      {
+        name: "Revisar progreso",
+        exercises: [
+          { name: "Actualizar total ahorrado", duration: 10 },
+          { name: "Definir siguiente aporte", duration: 5 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "otro-journaling",
+    name: "Journaling y claridad mental",
+    category: "Otro",
+    subCategory: "Hábito",
+    description: "Rutina para ordenar ideas, emociones y decisiones de la semana.",
+    color: "#6b7280",
+    icon: "target",
+    frequencyPerWeek: 4,
+    estimatedMinutes: 25,
+    defaultPriority: "2",
+    defaultType: "Hábito",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["habit"],
+    secondaryObjectives: ["custom"],
+    flexibilityTags: ["journaling", "claridad", "reflexión", "hábito"],
+    defaultPlan: [
+      {
+        name: "Reflexión",
+        exercises: [
+          { name: "Escribir cómo va el día", duration: 8 },
+          { name: "Nombrar emoción principal", duration: 5 },
+        ],
+      },
+      {
+        name: "Decisión",
+        exercises: [
+          { name: "Elegir una prioridad", duration: 5 },
+          { name: "Definir siguiente acción", duration: 5 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "otro-creativo",
+    name: "Proyecto creativo",
+    category: "Otro",
+    subCategory: "Productividad",
+    description: "Plan para escribir, diseñar, crear contenido o avanzar en una obra personal.",
+    color: "#6b7280",
+    icon: "target",
+    frequencyPerWeek: 3,
+    estimatedMinutes: 60,
+    defaultPriority: "2",
+    defaultType: "Proyecto",
+    defaultScheduleMode: "rotating",
+    primaryObjectives: ["project"],
+    secondaryObjectives: ["habit"],
+    flexibilityTags: ["creatividad", "contenido", "escritura", "proyecto"],
+    defaultPlan: [
+      {
+        name: "Idea",
+        exercises: [
+          { name: "Recolectar referencias", duration: 15 },
+          { name: "Definir enfoque", duration: 10 },
+        ],
+      },
+      {
+        name: "Producción",
+        exercises: [
+          { name: "Crear borrador", duration: 30 },
+          { name: "Guardar avance", duration: 5 },
+        ],
+      },
+      {
+        name: "Pulido",
+        exercises: [
+          { name: "Editar detalles", duration: 20 },
+          { name: "Preparar publicación o archivo", duration: 10 },
+        ],
+      },
+    ],
+  },
 ];
 

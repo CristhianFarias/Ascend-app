@@ -52,7 +52,7 @@ export const useProgressViewModel = () => {
   const bg = colors.background ?? (dark ? "#0b1220" : "#f8fafc");
   const card = colors.card ?? (dark ? "#111827" : "#ffffff");
   const text = colors.text ?? (dark ? "#f3f4f6" : "#0f172a");
-  const subtext = colors.border ?? (dark ? "#94a3b8" : "#64748b");
+  const subtext = dark ? "#cbd5e1" : "#475569";
   const border = colors.border ?? (dark ? "#334155" : "#e2e8f0");
   const primary = colors.primary ?? storedAccent;
   const successColor = "#22c55e";

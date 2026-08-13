@@ -140,11 +140,11 @@ const styles = StyleSheet.create({
   },
   templateActive: { borderColor: "#111827" },
   templateTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  templateDesc: { fontSize: 14, color: "#6b7280", marginTop: 6 },
-  templateMeta: { fontSize: 13, color: "#9ca3af", marginTop: 12 },
+  templateDesc: { fontSize: 14, color: "#475569", marginTop: 6 },
+  templateMeta: { fontSize: 13, color: "#64748b", marginTop: 12 },
   previewContainer: { flexDirection: "row", gap: 20, marginTop: 12 },
   previewBox: { alignItems: "center" },
-  previewLabel: { fontSize: 14, color: "#6b7280", marginBottom: 8 },
+  previewLabel: { fontSize: 14, color: "#475569", marginBottom: 8 },
   iconPreview: {
     width: 100,
     height: 100,
@@ -170,16 +170,16 @@ const styles = StyleSheet.create({
   },
   stepCard: {
     marginTop: 16,
-    padding: 20,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 14,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#dbe3ee",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
   },
   stepRow: { flexDirection: "row", gap: 12, marginTop: 12 },
   stepInput: { flex: 1 },
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   btnTextWhite: { color: "#fff", fontWeight: "700", fontSize: 17 },
-  emptySteps: { color: "#9ca3af", fontStyle: "italic", marginTop: 8 },
+  emptySteps: { color: "#64748b", fontStyle: "italic", marginTop: 8 },
   // Estilos agregados que estaban al final
   fitnessSummaryCard: {
     marginTop: 18,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   fitnessSummaryLabel: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#6b7280",
+    color: "#475569",
   },
   fitnessSummaryValue: {
     fontSize: 13,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     borderColor: "#e5e7eb",
   },
   emptyTemplateText: {
-    color: "#6b7280",
+    color: "#475569",
     fontWeight: "600",
     textAlign: "center",
   },
@@ -317,6 +317,54 @@ const styles = StyleSheet.create({
   },
   assistantActionText: { color: "#fff", fontWeight: "800" },
   advisorNote: { color: "#4338ca", fontWeight: "700", marginTop: 6 },
+  sessionChip: {
+    minWidth: 130,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  sessionChipTitle: { fontSize: 14, fontWeight: "900", color: "#111827" },
+  sessionChipMeta: { marginTop: 4, fontSize: 12, fontWeight: "700", color: "#475569" },
+  sessionGroup: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#dbe3ee",
+  },
+  sessionGroupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  sessionGroupTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#111827",
+  },
+  sessionGroupMeta: {
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#475569",
+  },
+  addSmallBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#e5e7eb",
+  },
+  stepHint: {
+    marginBottom: 10,
+    color: "#475569",
+    fontWeight: "700",
+    fontSize: 13,
+  },
 });
 
 export default function SmartGoalCreator({ editId, onClose }: Props) {
@@ -344,6 +392,8 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
     icon,
     steps,
     plan,
+    groupedSteps,
+    sessionOptions,
     selectedTemplateId,
     setSelectedTemplateId,
     showDatePicker,
@@ -438,7 +488,7 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
             value={title}
             onChangeText={setTitle}
             placeholder="Ej: Correr 5km todas las semanas"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#64748b"
           />
         </View>
 
@@ -451,7 +501,7 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
             onChangeText={setDescription}
             multiline
             placeholder="Detalles sobre tu meta..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#64748b"
           />
         </View>
 
@@ -772,6 +822,35 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
               ))}
             </View>
 
+            {isFitness && (
+              <>
+                <Text style={[styles.label, { marginTop: 16 }]}>
+                  Entorno de entrenamiento
+                </Text>
+                <View style={styles.row}>
+                  {WORKOUT_ENVIRONMENTS.map((env) => (
+                    <TouchableOpacity
+                      key={env}
+                      onPress={() => setWorkoutEnvironment(env)}
+                      style={[
+                        styles.chip,
+                        workoutEnvironment === env && styles.chipActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          workoutEnvironment === env && styles.chipTextActive,
+                        ]}
+                      >
+                        {env}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
             <Text style={[styles.label, { marginTop: 16 }]}>Nivel</Text>
             <View style={styles.row}>
               {(
@@ -818,6 +897,22 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
                 {note}
               </Text>
             ))}
+          </View>
+        )}
+
+        {plan.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Sesiones rotativas</Text>
+            <View style={styles.row}>
+              {plan.map((session, index) => (
+                <View key={`${session.name}-${index}`} style={styles.sessionChip}>
+                  <Text style={styles.sessionChipTitle}>{session.name}</Text>
+                  <Text style={styles.sessionChipMeta}>
+                    {session.exercises.length} pasos
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         )}
 
@@ -871,84 +966,144 @@ export default function SmartGoalCreator({ editId, onClose }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* Pasos / Ejercicios */}
+        {/* Sesiones del plan: organiza pasos por día/sesión para que la rutina sea legible. */}
         <View style={styles.section}>
-          <Text style={styles.label}>Pasos / Ejercicios</Text>
+          <Text style={styles.label}>Sesiones del plan</Text>
           {steps.length === 0 && (
             <Text style={styles.emptySteps}>
               Aún no hay pasos. Agrega uno para empezar.
             </Text>
           )}
 
-          {steps.map((step) => (
-            <View key={step.id} style={styles.stepCard}>
-              <TextInput
-                style={styles.input}
-                value={step.title}
-                onChangeText={(t) => updateLocalStep(step.id, { title: t })}
-                placeholder="Título del paso"
-                placeholderTextColor="#9ca3af"
-              />
-              <View style={styles.stepRow}>
-                <TextInput
-                  style={[styles.input, styles.stepInput]}
-                  keyboardType="numeric"
-                  value={String(step.duration)}
-                  onChangeText={(v) =>
-                    updateLocalStep(step.id, { duration: Number(v) || 10 })
-                  }
-                  placeholder="Duración (min)"
-                  placeholderTextColor="#9ca3af"
-                />
-                <TextInput
-                  style={[styles.input, styles.stepInput]}
-                  keyboardType="numeric"
-                  value={step.sets ? String(step.sets) : ""}
-                  onChangeText={(v) =>
-                    updateLocalStep(step.id, {
-                      sets: v ? Number(v) : undefined,
-                    })
-                  }
-                  placeholder="Sets"
-                  placeholderTextColor="#9ca3af"
-                />
+          {groupedSteps.map((group) => (
+            <View key={group.key} style={styles.sessionGroup}>
+              <View style={styles.sessionGroupHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sessionGroupTitle}>{group.title}</Text>
+                  <Text style={styles.sessionGroupMeta}>
+                    {group.steps.reduce((total, step) => total + (step.duration || 0), 0)} min
+                    {" · "}
+                    {group.steps.length} pasos
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => addStep(group.sessionName)}
+                  style={styles.addSmallBtn}
+                >
+                  <Feather name="plus" size={16} color="#111827" />
+                </TouchableOpacity>
               </View>
-              <View style={styles.stepRow}>
-                <TextInput
-                  style={[styles.input, styles.stepInput]}
-                  keyboardType="numeric"
-                  value={step.reps ? String(step.reps) : ""}
-                  onChangeText={(v) =>
-                    updateLocalStep(step.id, {
-                      reps: v ? Number(v) : undefined,
-                    })
-                  }
-                  placeholder="Reps"
-                  placeholderTextColor="#9ca3af"
-                />
-                <TextInput
-                  style={[styles.input, styles.stepInput]}
-                  keyboardType="numeric"
-                  value={step.rest ? String(step.rest) : ""}
-                  onChangeText={(v) =>
-                    updateLocalStep(step.id, {
-                      rest: v ? Number(v) : undefined,
-                    })
-                  }
-                  placeholder="Descanso (seg)"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-              <TouchableOpacity
-                onPress={() => removeLocalStep(step.id)}
-                style={styles.deleteStep}
-              >
-                <Text style={styles.deleteStepText}>Eliminar paso</Text>
-              </TouchableOpacity>
+
+              {group.steps.map((step) => {
+                const muscles = Array.isArray(step.metadata?.muscles)
+                  ? step.metadata?.muscles.join(", ")
+                  : undefined;
+
+                return (
+                  <View key={step.id} style={styles.stepCard}>
+                    {muscles && (
+                      <Text style={styles.stepHint}>Trabaja: {muscles}</Text>
+                    )}
+
+                    {sessionOptions.length > 0 && (
+                      <View style={{ marginBottom: 12 }}>
+                        <Text style={styles.previewLabel}>Mover a sesión</Text>
+                        <View style={styles.row}>
+                          {sessionOptions.map((sessionName) => {
+                            const active = step.session === sessionName;
+                            return (
+                              <TouchableOpacity
+                                key={`${step.id}-${sessionName}`}
+                                onPress={() =>
+                                  updateLocalStep(step.id, { session: sessionName })
+                                }
+                                style={[styles.chip, active && styles.chipActive]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.chipText,
+                                    active && styles.chipTextActive,
+                                  ]}
+                                >
+                                  {sessionName}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    )}
+
+                    <TextInput
+                      style={styles.input}
+                      value={step.title}
+                      onChangeText={(t) => updateLocalStep(step.id, { title: t })}
+                      placeholder="Título del paso"
+                      placeholderTextColor="#64748b"
+                    />
+                    <View style={styles.stepRow}>
+                      <TextInput
+                        style={[styles.input, styles.stepInput]}
+                        keyboardType="numeric"
+                        value={String(step.duration)}
+                        onChangeText={(v) =>
+                          updateLocalStep(step.id, { duration: Number(v) || 10 })
+                        }
+                        placeholder="Duración (min)"
+                        placeholderTextColor="#64748b"
+                      />
+                      <TextInput
+                        style={[styles.input, styles.stepInput]}
+                        keyboardType="numeric"
+                        value={step.sets ? String(step.sets) : ""}
+                        onChangeText={(v) =>
+                          updateLocalStep(step.id, {
+                            sets: v ? Number(v) : undefined,
+                          })
+                        }
+                        placeholder="Sets"
+                        placeholderTextColor="#64748b"
+                      />
+                    </View>
+                    <View style={styles.stepRow}>
+                      <TextInput
+                        style={[styles.input, styles.stepInput]}
+                        keyboardType="numeric"
+                        value={step.reps ? String(step.reps) : ""}
+                        onChangeText={(v) =>
+                          updateLocalStep(step.id, {
+                            reps: v ? Number(v) : undefined,
+                          })
+                        }
+                        placeholder="Reps"
+                        placeholderTextColor="#64748b"
+                      />
+                      <TextInput
+                        style={[styles.input, styles.stepInput]}
+                        keyboardType="numeric"
+                        value={step.rest ? String(step.rest) : ""}
+                        onChangeText={(v) =>
+                          updateLocalStep(step.id, {
+                            rest: v ? Number(v) : undefined,
+                          })
+                        }
+                        placeholder="Descanso (seg)"
+                        placeholderTextColor="#64748b"
+                      />
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => removeLocalStep(step.id)}
+                      style={styles.deleteStep}
+                    >
+                      <Text style={styles.deleteStepText}>Eliminar paso</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
             </View>
           ))}
 
-          <TouchableOpacity onPress={addStep} style={styles.addStepBtn}>
+          <TouchableOpacity onPress={() => addStep()} style={styles.addStepBtn}>
             <Feather name="plus" size={24} color="#374151" />
             <Text style={styles.addStepText}>Añadir nuevo paso</Text>
           </TouchableOpacity>

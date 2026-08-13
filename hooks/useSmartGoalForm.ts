@@ -202,7 +202,7 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
   const buildStepsFromSessions = (sessions: any[] = []): Step[] => {
     const builtSteps: Step[] = [];
 
-    sessions.forEach((session) => {
+    sessions.forEach((session, sessionIndex) => {
       session.exercises.forEach((exercise: any) => {
         builtSteps.push({
           id: `temp-${tempIdCounter.current++}`,
@@ -214,6 +214,11 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
           reps: exercise.reps,
           rest: exercise.rest,
           session: session.name,
+          metadata: {
+            ...(exercise.metadata ?? {}),
+            muscles: exercise.muscles,
+            sessionOrder: session.order ?? sessionIndex + 1,
+          },
         });
       });
     });
@@ -261,6 +266,7 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
     const proposal = designPersonalPlan({
       templates,
       category,
+      subCategory,
       title,
       deadline,
       primaryObjective,
@@ -317,7 +323,7 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
     );
   };
 
-  const addStep = () => {
+  const addStep = (sessionName?: string) => {
     setSteps((prev) => [
       ...prev,
       {
@@ -326,6 +332,8 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
         duration: 10,
         completed: false,
         order: prev.length + 1,
+        // Si el plan tiene sesiones rotativas, el nuevo paso entra en la primera.
+        session: sessionName ?? plan[0]?.name,
       },
     ]);
   };
@@ -415,6 +423,28 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
     setCustomColor(false);
   };
 
+  const sessionOptions = plan
+    .map((session) => session.name)
+    .filter((name): name is string => typeof name === "string" && !!name);
+
+  const groupedSteps = (
+    sessionOptions.length > 0
+      ? sessionOptions.map((sessionName, index) => ({
+          key: sessionName,
+          title: `Día ${index + 1}: ${sessionName}`,
+          sessionName,
+          steps: steps.filter((step) => step.session === sessionName),
+        }))
+      : [
+          {
+            key: "general",
+            title: "Día 1: Plan general",
+            sessionName: undefined,
+            steps,
+          },
+        ]
+  ).filter((group) => group.steps.length > 0 || sessionOptions.length > 0);
+
   return {
     accentColor,
     title,
@@ -439,6 +469,8 @@ export const useSmartGoalForm = ({ editId, onClose }: Params) => {
     icon,
     steps,
     plan,
+    groupedSteps,
+    sessionOptions,
     selectedTemplateId,
     setSelectedTemplateId,
     showDatePicker,

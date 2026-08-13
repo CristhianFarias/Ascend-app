@@ -191,8 +191,11 @@ export default function IndexScreen(): React.ReactElement {
   const {
     editMode,
     setEditMode,
+    viewMode,
+    setViewMode,
     setEditableSchedule,
     dataToRender,
+    weeklyPreview,
     franjasModalVisible,
     setFranjasModalVisible,
     localTimeBlocks,
@@ -248,7 +251,7 @@ export default function IndexScreen(): React.ReactElement {
             <Text style={{ fontWeight: "700", color: text }}>Franjas</Text>
           </TouchableOpacity>
 
-          {!editMode ? (
+          {viewMode === "day" && !editMode ? (
             <TouchableOpacity
               onPress={() => setEditMode(true)}
               style={[
@@ -258,7 +261,7 @@ export default function IndexScreen(): React.ReactElement {
             >
               <Text style={styles.primaryButtonText}>Editar</Text>
             </TouchableOpacity>
-          ) : (
+          ) : viewMode === "day" ? (
             <>
               <TouchableOpacity
                 onPress={saveEditedSchedule}
@@ -283,7 +286,7 @@ export default function IndexScreen(): React.ReactElement {
                 <Text style={{ fontWeight: "700", color: text }}>Cancelar</Text>
               </TouchableOpacity>
             </>
-          )}
+          ) : null}
         </View>
       </View>
 
@@ -380,21 +383,131 @@ export default function IndexScreen(): React.ReactElement {
       <View
         style={{
           flexDirection: "row",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginTop: 12,
         }}
       >
-        <TouchableOpacity
-          onPress={applyScheduleProposal}
+        <View
           style={[
-            styles.primaryButton,
-            { paddingHorizontal: 18, backgroundColor: primary },
+            styles.segmentedControl,
+            { backgroundColor: card, borderColor: border },
           ]}
         >
-          <Text style={styles.primaryButtonText}>Acomodar</Text>
-        </TouchableOpacity>
+          {(["day", "week"] as const).map((mode) => {
+            const active = viewMode === mode;
+            return (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => setViewMode(mode)}
+                style={[
+                  styles.segmentBtn,
+                  active && { backgroundColor: primary },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentText,
+                    { color: active ? "#fff" : text },
+                  ]}
+                >
+                  {mode === "day" ? "Hoy" : "Semana"}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {viewMode === "day" && (
+          <TouchableOpacity
+            onPress={applyScheduleProposal}
+            style={[
+              styles.primaryButton,
+              { paddingHorizontal: 18, backgroundColor: primary },
+            ]}
+          >
+            <Text style={styles.primaryButtonText}>Acomodar</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
+  );
+
+  const WeeklyOverview = () => (
+    <FlatList
+      data={weeklyPreview}
+      keyExtractor={(item) => item.dateKey}
+      ListHeaderComponent={<ListHeader />}
+      ListFooterComponent={<ListFooter />}
+      renderItem={({ item }) => (
+        <View
+          style={[
+            styles.weekDayCard,
+            {
+              backgroundColor: card,
+              borderColor: item.isToday ? primary : border,
+            },
+          ]}
+        >
+          <View style={styles.weekDayHeader}>
+            <View style={[styles.weekDayBadge, { backgroundColor: primary }]}>
+              <Text style={styles.weekDayBadgeText}>
+                {item.label.slice(0, 3).toUpperCase()}
+              </Text>
+              <Text style={styles.weekDayNumber}>{item.dayNumber}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.weekDayTitle, { color: text }]}>
+                {item.isToday ? "Hoy" : item.label}
+              </Text>
+              <Text style={[styles.weekDayMeta, { color: subtext }]}>
+                {item.goalCount} metas · {item.blocks.length} bloques ·{" "}
+                {item.totalMinutes} min
+              </Text>
+            </View>
+          </View>
+
+          {item.previewItems.length === 0 ? (
+            <Text style={[styles.weekEmpty, { color: subtext }]}>
+              Sin bloques para este día.
+            </Text>
+          ) : (
+            item.previewItems.map((preview) => (
+              <View
+                key={preview.id}
+                style={[styles.weekPreviewRow, { borderTopColor: border }]}
+              >
+                <Text style={[styles.weekPreviewTime, { color: subtext }]}>
+                  {preview.time}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[styles.weekPreviewTitle, { color: text }]}
+                    numberOfLines={1}
+                  >
+                    {preview.title}
+                  </Text>
+                  {preview.session && (
+                    <Text
+                      style={[styles.weekPreviewSession, { color: subtext }]}
+                      numberOfLines={1}
+                    >
+                      {preview.session}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ))
+          )}
+
+          {item.blocks.length > item.previewItems.length && (
+            <Text style={[styles.weekMore, { color: subtext }]}>
+              +{item.blocks.length - item.previewItems.length} bloques más
+            </Text>
+          )}
+        </View>
+      )}
+    />
   );
 
   const ListFooter = () => (
@@ -431,7 +544,9 @@ export default function IndexScreen(): React.ReactElement {
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       <StatusBar barStyle={dark ? "light-content" : "dark-content"} />
 
-      {editMode ? (
+      {viewMode === "week" && !editMode ? (
+        <WeeklyOverview />
+      ) : editMode ? (
         <DraggableFlatList
           data={dataToRender}
           keyExtractor={(item: ScheduleBlock, index) =>
@@ -912,6 +1027,21 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   primaryButtonText: { color: "#fff", fontWeight: "800" },
+  segmentedControl: {
+    flexDirection: "row",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 3,
+  },
+  segmentBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 9,
+  },
+  segmentText: {
+    fontWeight: "800",
+    fontSize: 13,
+  },
 
   ghostBtn: {
     paddingVertical: 8,
@@ -979,7 +1109,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontStyle: "italic",
-    color: "#9ca3af",
+    color: "#64748b",
     fontSize: 12,
   },
   smallFocus: {
@@ -994,6 +1124,81 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingBottom: 40,
     borderTopWidth: 1,
+  },
+  weekDayCard: {
+    marginHorizontal: 12,
+    marginVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    shadowColor: "#000",
+    shadowOpacity: Platform.OS === "ios" ? 0.03 : 0,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  weekDayHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  weekDayBadge: {
+    width: 54,
+    minHeight: 54,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  weekDayBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  weekDayNumber: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  weekDayTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    textTransform: "capitalize",
+  },
+  weekDayMeta: {
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  weekPreviewRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingTop: 10,
+    marginTop: 10,
+    borderTopWidth: 1,
+  },
+  weekPreviewTime: {
+    width: 82,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  weekPreviewTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  weekPreviewSession: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  weekEmpty: {
+    marginTop: 12,
+    fontSize: 13,
+    fontStyle: "italic",
+  },
+  weekMore: {
+    marginTop: 10,
+    fontSize: 12,
+    fontWeight: "800",
   },
 
   franjaCard: {

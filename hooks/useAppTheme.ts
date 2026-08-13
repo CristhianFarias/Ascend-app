@@ -7,13 +7,13 @@ import { useTheme } from "@react-navigation/native";
  * - Usa el theme de react-navigation (ya lo provee tu ThemeProvider en app/_layout.tsx).
  */
 export function useAppTheme() {
-  const { colors } = useTheme();
+  const { colors, dark } = useTheme();
 
   return {
     background: colors.background,
     card: colors.card,
     text: colors.text,
-    subtext: colors.border ?? colors.text, // subtexto (fallback)
+    subtext: dark ? "#cbd5e1" : "#475569",
     border: colors.border,
     primary: colors.primary, // accent (proviene del theme que generas con accent desde store)
   };

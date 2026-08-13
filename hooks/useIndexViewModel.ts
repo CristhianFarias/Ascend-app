@@ -6,11 +6,14 @@ import {
   getTodayKey,
   timeStrToMinutes,
 } from "../store/ItineraryUtils";
+import { formatYYYYMMDD } from "../store/dateKeyUtils";
 import { mergeScheduleBlocks } from "../store/scheduleMergeUtils";
 import useGoalsStore, {
   ScheduleBlock,
   TimeBlock,
 } from "../store/useGoalsStore";
+
+type ItineraryViewMode = "day" | "week";
 
 const QUOTES: { q: string; a: string }[] = [
   { q: "La disciplina es el puente entre metas y logros.", a: "Jim Rohn" },
@@ -48,6 +51,7 @@ export const useIndexViewModel = () => {
   const markTodayCompleteIfEligible = useGoalsStore(
     (s) => s.markTodayCompleteIfEligible,
   );
+  const storeVersion = useGoalsStore((s) => s._version);
   const stats = useGoalsStore((s) => s.getGlobalStats());
   const summary = useGoalsStore((s) => s.getTodayItinerarySummary());
   const nextItem = useGoalsStore((s) => s.findNextItineraryItem());
@@ -73,7 +77,7 @@ export const useIndexViewModel = () => {
   const bg = colors?.background ?? (dark ? "#0b1220" : "#fff");
   const card = colors?.card ?? (dark ? "#1f2937" : "#fff");
   const text = colors?.text ?? (dark ? "#f3f4f6" : "#0f172a");
-  const subtext = colors?.border ?? (dark ? "#9ca3af" : "#6b7280");
+  const subtext = dark ? "#cbd5e1" : "#475569";
   const border = colors?.border ?? (dark ? "#374151" : "#e5e7eb");
   const primary = colors?.primary ?? storedAccent ?? "#111";
 
@@ -87,6 +91,7 @@ export const useIndexViewModel = () => {
   );
   const [blockEditorVisible, setBlockEditorVisible] = useState(false);
   const [blockDraft, setBlockDraft] = useState<ScheduleBlock | null>(null);
+  const [viewMode, setViewMode] = useState<ItineraryViewMode>("day");
 
   const quote = useMemo(
     () => QUOTES[Math.floor(Math.random() * QUOTES.length)],
@@ -95,6 +100,50 @@ export const useIndexViewModel = () => {
 
   const dataToRender =
     (editMode ? editableSchedule : dailyScheduleFromStore) ?? [];
+
+  const weeklyPreview = useMemo(() => {
+    const start = new Date();
+
+    // Vista semanal no destructiva: calcula propuestas sin guardarlas.
+    // Si un día ya tiene agenda guardada, muestra esa agenda real.
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+      const dateKey = formatYYYYMMDD(date);
+      const state = useGoalsStore.getState();
+      const saved = state.getMergedScheduleForDate(dateKey);
+      const blocks =
+        saved.length > 0
+          ? saved
+          : state.generateScheduleProposal(dateKey).proposal;
+      const totalMinutes = blocks.reduce(
+        (total, block) => total + (block.minutes || 0),
+        0,
+      );
+      const goalCount = new Set(blocks.map((block) => block.goalId)).size;
+      const previewItems = blocks.slice(0, 3).map((block) => {
+        const firstStep = state.getExpandedStepsForBlock(block)[0]?.step;
+        const session = firstStep?.session;
+        return {
+          id: block.id,
+          title: block.goalTitle,
+          time: `${block.start}-${block.end}`,
+          session,
+        };
+      });
+
+      return {
+        dateKey,
+        label: date.toLocaleDateString("es-ES", { weekday: "short" }),
+        dayNumber: date.getDate(),
+        isToday: dateKey === todayKey,
+        blocks,
+        totalMinutes,
+        goalCount,
+        previewItems,
+      };
+    });
+  }, [storeVersion, todayKey]);
 
   useEffect(() => {
     if (!editMode) setEditableSchedule(dailyScheduleFromStore ?? []);
@@ -300,9 +349,12 @@ export const useIndexViewModel = () => {
     todayKey,
     editMode,
     setEditMode,
+    viewMode,
+    setViewMode,
     editableSchedule,
     setEditableSchedule,
     dataToRender,
+    weeklyPreview,
     franjasModalVisible,
     setFranjasModalVisible,
     localTimeBlocks,

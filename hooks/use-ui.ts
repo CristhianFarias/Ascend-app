@@ -29,7 +29,7 @@ export function useUI() {
     card: colors?.card ?? (dark ? "#111827" : "#ffffff"),
     text: colors?.text ?? (dark ? "#f3f4f6" : "#111827"),
     // For small text prefer stronger color than textSecondary
-    textSecondary: colors?.border ?? (dark ? "#d1d5db" : "#6b7280"),
+    textSecondary: dark ? "#d1d5db" : "#475569",
     textSmallColor: colors?.text ?? (dark ? "#f3f4f6" : "#111827"), // stronger for small text
     border: colors?.border ?? (dark ? "#374151" : "#e5e7eb"),
     accent,
